@@ -16,7 +16,7 @@ const UserSchema = new mongoose.Schema(
         },
 
         pin: {
-            type: Number,
+            type: String,
             required: true
         },
 

@@ -6,6 +6,7 @@ import userAuthRoutes from "./routes/userAuth.route.js";
 import systemUserAuthRoutes from "./routes/systemUserAuth.route.js";
 import userRoutes from "./routes/user.route.js";
 import managerRoutes from "./routes/manager.route.js";
+import testRegister from "./routes/test.route.js";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth/users", userAuthRoutes);
+app.use("/api/auth/test-register", testRegister);
 app.use("/api/auth/system-users", systemUserAuthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/manager", managerRoutes);
