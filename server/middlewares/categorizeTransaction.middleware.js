@@ -114,6 +114,8 @@ Examples:
             return next();
         }
 
+        console.log(result);
+
         // If LLM returns something outside the allowed categories,
         // safely categorize it as "other"
         if (!VALID_CATEGORIES.includes(llmCategory)) {
