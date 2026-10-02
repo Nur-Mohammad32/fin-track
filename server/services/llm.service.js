@@ -1,9 +1,4 @@
-// server/services/llm.service.js
-// Shared helper: every AI feature calls the LLM through this one function.
-// Uses the env variables: LLM_BASE_URL, LLM_API_KEY, LLM_MODEL.
-
 export const askLLM = async (input, { temperature = 0 } = {}) => {
-    // input can be a plain string (prompt) or a messages array
     const messages =
         typeof input === "string"
             ? [{ role: "user", content: input }]

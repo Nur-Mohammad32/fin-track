@@ -5,6 +5,7 @@
 
 import Transaction from "../models/transaction.model.js";
 import Alert from "../models/alert.model.js";
+import { askLLM } from "./llm.service.js";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -17,6 +18,58 @@ const dhakaHour = (date) =>
             timeZone: "Asia/Dhaka"
         }).format(date)
     ) % 24;
+
+// Without a valid LLM assessment, do not claim high confidence.
+const fallbackConfidence = () => 0;
+
+const classifyConfidence = async (txn, hits) => {
+    const fallback = new Map(
+        hits.map((hit) => [hit.type, fallbackConfidence()])
+    );
+
+    try {
+        const answer = await askLLM(
+            `You are a fraud/anomaly risk classifier.
+Review only the verified transaction anomaly evidence below.
+For every anomaly type, estimate how confident you are that it represents
+a genuinely suspicious event for this user. Return ONLY valid JSON:
+{"results":[{"type":"large_amount","confidence":0}]}
+Confidence must be an integer from 0 to 100. Do not invent facts.
+An 80 or higher confidence means the app may show a prominent red alert.
+Below 80 means it belongs in the general notification panel.
+
+Transaction:
+${JSON.stringify({
+                amount: txn.amount,
+                recipient: txn.to,
+                type: txn.transactionType,
+                category: txn.category
+            })}
+
+Detected evidence:
+${hits.map((hit) => `- ${hit.type}: ${hit.message}`).join("\n")}`,
+            { temperature: 0 }
+        );
+        const parsed = JSON.parse(answer);
+        if (Array.isArray(parsed.results)) {
+            for (const item of parsed.results) {
+                const confidence = Number(item.confidence);
+                if (
+                    hits.some((hit) => hit.type === item.type) &&
+                    Number.isInteger(confidence) &&
+                    confidence >= 0 &&
+                    confidence <= 100
+                ) {
+                    fallback.set(item.type, confidence);
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Anomaly confidence classification failed:", error.message);
+    }
+
+    return fallback;
+};
 
 export const checkTransaction = async (txn) => {
     if (txn.status !== "success") return [];
@@ -82,17 +135,31 @@ export const checkTransaction = async (txn) => {
 
     if (hits.length === 0) return [];
 
+    const confidenceByType = await classifyConfidence(txn, hits);
+
     return Alert.insertMany(
-        hits.map((h) => ({
-            ...h,
-            phone: txn.from,
-            transactionId: txn.transactionId
-        }))
+        hits.map((hit) => {
+            const confidence = confidenceByType.get(hit.type);
+            return {
+                ...hit,
+                phone: txn.from,
+                transactionId: txn.transactionId,
+                confidence,
+                displayType: confidence >= 80 ? "red_alert" : "notification"
+            };
+        })
     );
 };
 
-export const getAlerts = (phone, { unreadOnly = false } = {}) =>
-    Alert.find({ phone, ...(unreadOnly && { read: false }) })
+export const getAlerts = (
+    phone,
+    { unreadOnly = false, displayType = null } = {}
+) =>
+    Alert.find({
+        phone,
+        ...(unreadOnly && { read: false }),
+        ...(displayType && { displayType })
+    })
         .sort({ createdAt: -1 })
         .limit(50);
 

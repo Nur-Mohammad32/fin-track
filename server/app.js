@@ -12,15 +12,11 @@ import userRoutes from "./routes/user.route.js";
 import managerRoutes from "./routes/manager.route.js";
 import testRegister from "./routes/test.route.js";
 import transactionRouter from "./routes/transaction.route.js";
-import billRouter from "./routes/bill.route.js";
 import systemAccountRouter from "./routes/systemAccount.route.js";
 import testTransactionRouter from './routes/testTransaction.route.js';
 import analyticsRouter from "./routes/analytics.route.js";
 import budgetRouter from "./routes/budget.route.js";
 import alertRouter from "./routes/alert.route.js";
-import notificationRouter from "./routes/notification.route.js";
-import { startDailyRecommendationJob } from "./jobs/dailyRecommendation.job.js";
-import chatRouter from "./routes/chat.route.js";
 
 const app = express();
 
@@ -41,14 +37,11 @@ app.use("/api/user", userRoutes);
 app.use("/api/manager", managerRoutes);
 
 app.use("/api/transaction", transactionRouter);
-app.use("/api/bill", billRouter);
 app.use("/api/system-account", systemAccountRouter);
 app.use("/api/test-transaction", testTransactionRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/budget", budgetRouter);
 app.use("/api/alerts", alertRouter);
-app.use("/api/notifications", notificationRouter);
-app.use("/api/chat", chatRouter);
 
 app.use(errorHandler);
 
@@ -56,5 +49,4 @@ const PORT = 5000;
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    startDailyRecommendationJob();
 });
