@@ -42,7 +42,9 @@ const transactionSchema = new mongoose.Schema(
                 "Server/service unavailable",
                 "Transaction timeout",
                 "Security/fraud check failure",
-                "KYC/account verification issue"
+                "KYC/account verification issue",
+                "Invalid bill details",
+                "Invalid amount"
             ],
             default: null
         },

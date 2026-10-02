@@ -66,9 +66,9 @@ const sum = (rows) => rows.reduce((s, r) => s + r.total, 0);
 const percent = (cur, prev) =>
     prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null;
 
-export const getSummary = async (phone) => {
-    const cur = monthRange(0);
-    const prev = monthRange(-1);
+export const getSummary = async (phone, offset = 0) => {
+    const cur = monthRange(offset);
+    const prev = monthRange(offset - 1);
 
     const [curRows, prevRows, income, prevIncome] = await Promise.all([
         spendByCategory(phone, cur.start, cur.end),

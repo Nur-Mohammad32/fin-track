@@ -1,10 +1,15 @@
 import crypto from "crypto";
+
 import mongoose from "mongoose";
+
 import bcrypt from "bcryptjs";
 
 import Transaction from "../models/transaction.model.js";
+
 import User from "../models/user.model.js";
+
 import SystemAccount from "../models/systemAccount.model.js";
+
 import { checkTransaction } from "../services/anomaly.service.js";
 
 const VALID_TYPES =
@@ -31,8 +36,30 @@ const generateTransactionId = () => {
     );
 };
 
+const getSafeCategory = (category) => {
+    if (category && VALID_CATEGORIES.includes(category)) {
+        return category;
+    }
+
+    return VALID_CATEGORIES.includes("other")
+        ? "other"
+        : VALID_CATEGORIES[0];
+};
+
+const getSafeTransactionDate = (transactionDate) => {
+    if (!transactionDate) {
+        return new Date();
+    }
+
+    const date = new Date(transactionDate);
+
+    return Number.isNaN(date.getTime())
+        ? new Date()
+        : date;
+};
+
 /* ------------------------------------------------------------------ */
-/* Execute Transaction                                                */
+/* Execute Transaction                                                 */
 /* ------------------------------------------------------------------ */
 
 const executeTransfer = async (
@@ -223,8 +250,30 @@ const executeTransfer = async (
 };
 
 /* ------------------------------------------------------------------ */
-/* Store Failed Transaction                                           */
+/* Store Failed Transaction                                             */
 /* ------------------------------------------------------------------ */
+
+export const getMyTransactions = async (req, res) => {
+    try {
+        const phone = req.user.phone;
+
+        const transactions = await Transaction.find({
+            $or: [{ from: phone }, { to: phone }]
+        }).sort({ transactionDate: -1 });
+
+        return res.status(200).json({
+            success: true,
+            count: transactions.length,
+            transactions
+        });
+    } catch (error) {
+        console.error("Get transactions error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Server/service unavailable"
+        });
+    }
+};
 
 const recordFailure = async (
     data,
@@ -235,13 +284,19 @@ const recordFailure = async (
             transactionId: data.transactionId,
             from: data.from,
             to: data.to,
-            amount: data.amount,
+            amount: Number.isFinite(data.amount)
+                ? data.amount
+                : 0,
             status: "failed",
             failReason,
-            transactionType: data.transactionType,
-            category: data.category || "other",
+            transactionType: VALID_TYPES.includes(data.transactionType)
+                ? data.transactionType
+                : VALID_TYPES[0],
+            category: getSafeCategory(data.category),
             reference: data.reference,
-            transactionDate: data.transactionDate
+            transactionDate: getSafeTransactionDate(
+                data.transactionDate
+            )
         });
     } catch (error) {
         console.error(
@@ -252,7 +307,7 @@ const recordFailure = async (
 };
 
 /* ------------------------------------------------------------------ */
-/* Create Transaction                                                 */
+/* Create Transaction                                                   */
 /* ------------------------------------------------------------------ */
 
 export const createTransaction = async (
@@ -263,6 +318,7 @@ export const createTransaction = async (
      * Sender is taken from authenticated user.
      * Never trust req.body.from.
      */
+
     const from = req.user.phone;
 
     const {
@@ -277,60 +333,6 @@ export const createTransaction = async (
 
     const numAmount = Number(amount);
 
-    // Validate recipient
-    if (!to || typeof to !== "string") {
-        return res.status(400).json({
-            success: false,
-            message: "Recipient (to) is required"
-        });
-    }
-
-    // Validate amount
-    if (
-        !Number.isFinite(numAmount) ||
-        numAmount <= 0
-    ) {
-        return res.status(400).json({
-            success: false,
-            message: "Amount must be a positive number"
-        });
-    }
-
-    // Validate PIN
-    if (!pin) {
-        return res.status(400).json({
-            success: false,
-            message: "PIN is required"
-        });
-    }
-
-    // Validate transaction type
-    if (!VALID_TYPES.includes(transactionType)) {
-        return res.status(400).json({
-            success: false,
-            message: `transactionType must be one of: ${VALID_TYPES.join(", ")}`
-        });
-    }
-
-    // Category should already be added by middleware
-    if (
-        !category ||
-        !VALID_CATEGORIES.includes(category)
-    ) {
-        return res.status(400).json({
-            success: false,
-            message: `category must be one of: ${VALID_CATEGORIES.join(", ")}`
-        });
-    }
-
-    // Prevent self-transfer
-    if (to === from) {
-        return res.status(400).json({
-            success: false,
-            message: "Cannot send money to yourself"
-        });
-    }
-
     const data = {
         transactionId: generateTransactionId(),
         from,
@@ -342,6 +344,96 @@ export const createTransaction = async (
         reference,
         transactionDate
     };
+
+    // Validate recipient
+    if (!to || typeof to !== "string") {
+        await recordFailure(
+            data,
+            "Recipient (to) is required"
+        );
+
+        return res.status(400).json({
+            success: false,
+            message: "Recipient (to) is required",
+            transactionId: data.transactionId
+        });
+    }
+
+    // Validate amount
+    if (
+        !Number.isFinite(numAmount) ||
+        numAmount <= 0
+    ) {
+        await recordFailure(
+            data,
+            "Amount must be a positive number"
+        );
+
+        return res.status(400).json({
+            success: false,
+            message: "Amount must be a positive number",
+            transactionId: data.transactionId
+        });
+    }
+
+    // Validate PIN
+    if (!pin) {
+        await recordFailure(
+            data,
+            "PIN is required"
+        );
+
+        return res.status(400).json({
+            success: false,
+            message: "PIN is required",
+            transactionId: data.transactionId
+        });
+    }
+
+    // Validate transaction type
+    if (!VALID_TYPES.includes(transactionType)) {
+        await recordFailure(
+            data,
+            `transactionType must be one of: ${VALID_TYPES.join(", ")}`
+        );
+
+        return res.status(400).json({
+            success: false,
+            message: `transactionType must be one of: ${VALID_TYPES.join(", ")}`,
+            transactionId: data.transactionId
+        });
+    }
+
+    // Category should already be added by middleware
+    if (
+        !category ||
+        !VALID_CATEGORIES.includes(category)
+    ) {
+        await recordFailure(
+            data,
+            `category must be one of: ${VALID_CATEGORIES.join(", ")}`
+        );
+
+        return res.status(400).json({
+            success: false,
+            message: `category must be one of: ${VALID_CATEGORIES.join(", ")}`,
+            transactionId: data.transactionId
+        });
+    }
+
+    // Prevent self-transfer
+    if (to === from) {
+        await recordFailure(
+            data,
+            "Cannot send money to yourself"
+        );
+
+        return res.status(400).json({
+            success: false,
+            message: "Cannot send money to yourself",
+            transactionId: data.transactionId
+        });
+    }
 
     const session =
         await mongoose.startSession();
@@ -360,7 +452,10 @@ export const createTransaction = async (
         );
 
         checkTransaction(result.transaction).catch((e) =>
-            console.error("Anomaly check failed:", e.message)
+            console.error(
+                "Anomaly check failed:",
+                e.message
+            )
         );
 
         return res.status(201).json({
