@@ -1,6 +1,10 @@
 import express from "express";
+import dns from "node:dns";
 import connectDB from "./config/db.js";
 import errorHandler from "./middlewares/errorHandler.middleware.js";
+
+// Use a public DNS resolver for MongoDB SRV lookups.
+dns.setServers(["8.8.8.8"]);
 
 import userAuthRoutes from "./routes/userAuth.route.js";
 import systemUserAuthRoutes from "./routes/systemUserAuth.route.js";
@@ -10,6 +14,11 @@ import testRegister from "./routes/test.route.js";
 import transactionRouter from "./routes/transaction.route.js";
 import systemAccountRouter from "./routes/systemAccount.route.js";
 import testTransactionRouter from './routes/testTransaction.route.js';
+import analyticsRouter from "./routes/analytics.route.js";
+import budgetRouter from "./routes/budget.route.js";
+import alertRouter from "./routes/alert.route.js";
+import reminderRouter from "./routes/reminder.route.js";
+import chatRouter from "./routes/chat.route.js";
 
 const app = express();
 
@@ -32,6 +41,11 @@ app.use("/api/manager", managerRoutes);
 app.use("/api/transaction", transactionRouter);
 app.use("/api/system-account", systemAccountRouter);
 app.use("/api/test-transaction", testTransactionRouter);
+app.use("/api/analytics", analyticsRouter);
+app.use("/api/budget", budgetRouter);
+app.use("/api/alerts", alertRouter);
+app.use("/api/reminders", reminderRouter);
+app.use("/api/chat", chatRouter);
 
 app.use(errorHandler);
 
