@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import Transaction from "../models/transaction.model.js";
 import User from "../models/user.model.js";
 import SystemAccount from "../models/systemAccount.model.js";
+import { checkTransaction } from "../services/anomaly.service.js";
 
 const VALID_TYPES =
     Transaction.schema.path("transactionType").enumValues;
@@ -356,6 +357,10 @@ export const createTransaction = async (
                         session
                     );
             }
+        );
+
+        checkTransaction(result.transaction).catch((e) =>
+            console.error("Anomaly check failed:", e.message)
         );
 
         return res.status(201).json({
