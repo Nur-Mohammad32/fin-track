@@ -19,6 +19,17 @@ const alertSchema = new mongoose.Schema(
             enum: ["low", "medium", "high"],
             default: "medium"
         },
+        confidence: {
+            type: Number,
+            min: 0,
+            max: 100,
+            required: true
+        },
+        displayType: {
+            type: String,
+            enum: ["red_alert", "notification"],
+            required: true
+        },
         message: { type: String, required: true },
         transactionId: { type: String },
         read: { type: Boolean, default: false }

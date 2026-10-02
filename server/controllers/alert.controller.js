@@ -4,10 +4,23 @@ import { getAlerts, markRead } from "../services/anomaly.service.js";
 // GET /api/alerts             -> all alerts
 // GET /api/alerts?unread=true -> only unread
 export const list = async (req, res) => {
+    const displayType = ["red_alert", "notification"].includes(
+        req.query.type
+    )
+        ? req.query.type
+        : null;
     const alerts = await getAlerts(req.user.phone, {
-        unreadOnly: req.query.unread === "true"
+        unreadOnly: req.query.unread === "true",
+        displayType
     });
-    res.json({ success: true, data: alerts });
+    res.json({
+        success: true,
+        data: alerts,
+        meta: {
+            type: displayType || "all",
+            redAlertThreshold: 80
+        }
+    });
 };
 
 // PATCH /api/alerts/:id/read
