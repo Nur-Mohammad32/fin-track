@@ -10,6 +10,7 @@ import MobileRecharge from "./MobileRecharge"
 import MakePayment from "./MakePayment"
 import Donation from "./Donation"
 import FinTrack from "./FinTrack"
+import BudgetGoals from "./BudgetGoals"
 import BottomNav from "../components/BottomNav"
 import Profile from "./Profile"
 import Transactions from "./Transactions"
@@ -42,6 +43,7 @@ export default function Home({ user, onLogout }) {
   const [openMakePayment, setOpenMakePayment] = useState(false)
   const [openDonation, setOpenDonation] = useState(false)
   const [openFinTrack, setOpenFinTrack] = useState(false)
+  const [openBudgetGoals, setOpenBudgetGoals] = useState(false)
   const [balance, setBalance] = useState(null)
   const [balError, setBalError] = useState("")
   const [section, setSection] = useState("Home")
@@ -115,6 +117,11 @@ export default function Home({ user, onLogout }) {
     setOpenFinTrack(true)
   }
 
+  const openBudgetGoalsHandler = () => {
+    setOpenFinTrack(false)
+    setOpenBudgetGoals(true)
+  }
+
   if (openSend) {
     return <SendMoney user={user} balance={balance} onClose={() => setOpenSend(false)} />
   }
@@ -136,7 +143,19 @@ export default function Home({ user, onLogout }) {
   }
 
   if (openFinTrack) {
-    return <FinTrack user={user} onClose={() => setOpenFinTrack(false)} />
+    return <FinTrack user={user} onClose={() => setOpenFinTrack(false)} onPlanMonth={openBudgetGoalsHandler} />
+  }
+
+  if (openBudgetGoals) {
+    return (
+      <BudgetGoals
+        user={user}
+        onClose={() => {
+          setOpenBudgetGoals(false)
+          setOpenFinTrack(true)
+        }}
+      />
+    )
   }
 
   return (

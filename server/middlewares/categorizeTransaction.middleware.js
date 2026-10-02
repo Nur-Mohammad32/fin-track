@@ -55,9 +55,24 @@ Rules:
 5. If the transaction clearly does not fit any category, return "other".
 6. Return ONLY the exact category name.
 7. Do not return explanations or additional text.
+8. The categories are: food-dining",
+                "bills-utilities",
+                "housing",
+                "transportation",
+                "shopping",
+                "healthcare",
+                "education",
+                "entertainment",
+                "communication",
+                "personal-care",
+                "financial",
+                "family-social",
+                "donation",
+                "other"
 
 Examples:
 - "khabar kinlam" → food-dining
+- "basha vara" -> housing
 - "restaurant e lunch korlam" → food-dining
 - "বিদ্যুৎ বিল দিলাম" → bills-utilities
 - "rickshaw vara" → transportation

@@ -124,8 +124,8 @@ export const getRecommendations = async (user) => {
     try {
         const answer = await askLLM(
             `You are a friendly personal finance coach in a mobile wallet app in Bangladesh.
-Using ONLY the facts below, write exactly 3 short, practical tips (max 20 words each) that help the user reduce spending and reach their saving goal (if they have one).
-Write in simple Banglish (Bangla written in English letters).
+Using ONLY the facts below, write at maximum 3 short, practical tips (max 20 words each) that help the user reduce spending and reach their saving goal (if they have one).
+Write in simple English.
 One tip per line. No numbering, no extra text. Do not invent numbers.
 
 Facts:

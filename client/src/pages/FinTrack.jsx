@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react"
-import { TrendingUp, TrendingDown, Wallet, Receipt, Calendar, Percent } from "lucide-react"
+import { TrendingUp, TrendingDown, Wallet, Receipt, Calendar, Percent, Target, Loader2 } from "lucide-react"
 import { apiFetch } from "../lib/api"
 
-export default function FinTrack({ user, onClose }) {
+export default function FinTrack({ user, onClose, onPlanMonth }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [balance, setBalance] = useState(null)
   const [summary, setSummary] = useState(null)
+  const [recommendations, setRecommendations] = useState(null)
+  const [recLoading, setRecLoading] = useState(true)
 
+  // Load balance + summary immediately (fast)
   useEffect(() => {
     let cancelled = false
 
@@ -32,6 +35,28 @@ export default function FinTrack({ user, onClose }) {
     }
 
     load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Load AI recommendations separately (can take time)
+  useEffect(() => {
+    let cancelled = false
+
+    const loadRec = async () => {
+      setRecLoading(true)
+      try {
+        const data = await apiFetch("/analytics/recommendations")
+        if (!cancelled) setRecommendations(data.data ?? null)
+      } catch {
+        // recommendations are optional
+      } finally {
+        if (!cancelled) setRecLoading(false)
+      }
+    }
+
+    loadRec()
     return () => {
       cancelled = true
     }
@@ -193,11 +218,43 @@ export default function FinTrack({ user, onClose }) {
               <div className="flex items-center gap-2">
                 <span className="text-blue-600">✦</span>
                 <h3 className="text-sm font-bold text-gray-900">AI Insights</h3>
+                {recLoading && (
+                  <Loader2 className="ml-auto size-4 animate-spin text-blue-600" />
+                )}
               </div>
-              <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
-                Track your spending, get saving tips, and stay on budget with your personal finance guide.
-              </p>
+              {recLoading ? (
+                <p className="mt-1.5 text-xs text-gray-400">Generating insights...</p>
+              ) : recommendations?.tips?.length > 0 ? (
+                <ul className="mt-2 space-y-1.5">
+                  {recommendations.tips.map((tip, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-gray-600">
+                      <span className="mt-0.5 text-blue-600">•</span>
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
+                  Track your spending, get saving tips, and stay on budget with your personal finance guide.
+                </p>
+              )}
             </div>
+
+            {/* Plan Your Month */}
+            <button
+              className="mt-5 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-blue-400 p-4 text-left shadow-md transition hover:opacity-90"
+              onClick={onPlanMonth}
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 items-center justify-center rounded-xl bg-white/20 text-white">
+                  <Target className="size-5" />
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-white">Plan Your Month</p>
+                  <p className="mt-0.5 text-[10px] text-blue-100">Set goals and plan your spending</p>
+                </div>
+              </div>
+            </button>
 
             {/* Back button */}
             <button
