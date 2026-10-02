@@ -9,6 +9,6 @@ export const summary = async (req, res) => {
 export const recommendations = async (req, res) => {
     res.json({
         success: true,
-        data: await getRecommendations(req.user.phone)
+        data: await getRecommendations(req.user)
     });
 };
