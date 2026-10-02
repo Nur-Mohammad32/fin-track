@@ -1,10 +1,14 @@
 import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
 
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        if (
+            !authHeader ||
+            !authHeader.startsWith("Bearer ")
+        ) {
             return res.status(401).json({
                 success: false,
                 message: "Authentication required"
@@ -18,9 +22,19 @@ const authenticate = (req, res, next) => {
             process.env.JWT_SECRET
         );
 
-        req.user = decoded;
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        req.user = user;
 
         next();
+
     } catch (error) {
         return res.status(401).json({
             success: false,

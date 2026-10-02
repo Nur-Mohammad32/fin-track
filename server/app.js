@@ -7,6 +7,8 @@ import systemUserAuthRoutes from "./routes/systemUserAuth.route.js";
 import userRoutes from "./routes/user.route.js";
 import managerRoutes from "./routes/manager.route.js";
 import testRegister from "./routes/test.route.js";
+import transactionRouter from "./routes/transaction.route.js";
+import systemAccountRouter from "./routes/systemAccount.route.js";
 
 const app = express();
 
@@ -25,6 +27,9 @@ app.use("/api/auth/test-register", testRegister);
 app.use("/api/auth/system-users", systemUserAuthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/manager", managerRoutes);
+
+app.use("/api/transaction", transactionRouter);
+app.use("/api/system-account", systemAccountRouter);
 
 app.use(errorHandler);
 
