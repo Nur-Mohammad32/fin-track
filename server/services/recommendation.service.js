@@ -1,13 +1,9 @@
-// server/services/recommendation.service.js
-// Feature 5: Personalized recommendation - where to reduce expense.
-// Step 1: rules find the problem categories from the spending summary.
-// Step 2: LLM turns those facts into short friendly tips.
-// If the LLM fails, the rule-based facts are returned instead.
-
+import User from "../models/user.model.js";
+import Notification from "../models/notification.model.js";
 import { getSummary } from "./analytics.service.js";
+import { getProgress } from "./budget.service.js";
 import { askLLM } from "./llm.service.js";
 
-// Categories we never suggest cutting
 const FIXED = [
     "housing",
     "bills-utilities",
@@ -16,54 +12,95 @@ const FIXED = [
     "financial"
 ];
 
-const findIssues = (summary) => {
-    const issues = [];
+const todayDhaka = () =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(
+        new Date()
+    );
 
-    // 1. Flexible categories that grew 20%+ compared to the month before
+const spendingFacts = (summary) => {
+    const facts = [];
+
     summary.categories
         .filter(
-            (c) =>
-                !FIXED.includes(c.category) &&
-                c.category !== "other" &&
-                c.previous > 0 &&
-                c.changePercent !== null &&
-                c.changePercent >= 20
+            (category) =>
+                !FIXED.includes(category.category) &&
+                category.category !== "other" &&
+                category.previous > 0 &&
+                category.changePercent !== null &&
+                category.changePercent >= 20
         )
-        .forEach((c) =>
-            issues.push(
-                `${c.category} spending is up ${c.changePercent}% vs the month before (${c.previous} -> ${c.current} BDT).`
+        .forEach((category) =>
+            facts.push(
+                `${category.category} spending is up ${category.changePercent}% vs the month before (${category.previous} -> ${category.current} BDT).`
             )
         );
 
-    // 2. One flexible category takes 30%+ of all spending
     summary.categories
-        .filter((c) => !FIXED.includes(c.category) && summary.spent > 0)
-        .forEach((c) => {
-            const share = Math.round((c.current / summary.spent) * 100);
+        .filter(
+            (category) =>
+                !FIXED.includes(category.category) && summary.spent > 0
+        )
+        .forEach((category) => {
+            const share = Math.round(
+                (category.current / summary.spent) * 100
+            );
             if (share >= 30) {
-                issues.push(
-                    `${c.category} is ${share}% of all spending this month (${c.current} of ${summary.spent} BDT).`
+                facts.push(
+                    `${category.category} is ${share}% of all spending (${category.current} of ${summary.spent} BDT).`
                 );
             }
         });
 
-    // 3. Spending is higher than income
     if (summary.income > 0 && summary.spent > summary.income) {
-        issues.push(
-            `Spending (${summary.spent} BDT) is higher than income (${summary.income} BDT) this month.`
+        facts.push(
+            `Spending (${summary.spent} BDT) is higher than income (${summary.income} BDT).`
         );
     }
 
-    return issues;
+    return facts;
 };
 
-export const getRecommendations = async (phone) => {
-    // Use this month; if nothing spent yet, use the last full month instead
-    let summary = await getSummary(phone, 0);
-    if (summary.spent === 0) summary = await getSummary(phone, -1);
+const goalFacts = (progress) => {
+    if (!progress) return [];
+
+    const facts = [
+        `Saving goal: ${progress.goalAmount} BDT by ${new Date(progress.endDate)
+            .toISOString()
+            .slice(0, 10)} (${progress.monthlyTarget} BDT per month).`
+    ];
+
+    facts.push(
+        progress.onTrack
+            ? "Saving is on track so far."
+            : `Balance changed by ${progress.savedSoFar} BDT since the plan started (target so far: ${progress.expectedSoFar} BDT).`
+    );
+
+    progress.categories
+        .filter((category) => category.status === "over")
+        .forEach((category) =>
+            facts.push(
+                `Budget exceeded for ${category.category}: spent ${category.spent} of ${category.limit} BDT.`
+            )
+        );
+
+    progress.categories
+        .filter((category) => category.status === "warning")
+        .forEach((category) =>
+            facts.push(
+                `Budget almost used for ${category.category}: spent ${category.spent} of ${category.limit} BDT.`
+            )
+        );
+
+    return facts;
+};
+
+export const getRecommendations = async (user) => {
+    let summary = await getSummary(user.phone, 0);
+    if (summary.spent === 0) summary = await getSummary(user.phone, -1);
 
     if (summary.spent === 0) {
         return {
+            hasData: false,
             source: "rules",
             month: summary.month,
             tips: ["Not enough spending data yet."],
@@ -71,10 +108,12 @@ export const getRecommendations = async (phone) => {
         };
     }
 
-    const issues = findIssues(summary);
+    const progress = await getProgress(user);
+    const facts = [...spendingFacts(summary), ...goalFacts(progress)];
 
-    if (issues.length === 0) {
+    if (facts.length === 0) {
         return {
+            hasData: true,
             source: "rules",
             month: summary.month,
             tips: ["Your spending looks balanced. Keep it up!"],
@@ -85,28 +124,98 @@ export const getRecommendations = async (phone) => {
     try {
         const answer = await askLLM(
             `You are a friendly personal finance coach in a mobile wallet app in Bangladesh.
-Based on these facts about the user's spending, give 3 short, practical tips to reduce expenses.
+Using ONLY the facts below, write exactly 3 short, practical tips (max 20 words each) that help the user reduce spending and reach their saving goal (if they have one).
 Write in simple Banglish (Bangla written in English letters).
-One tip per line. No numbering, no extra text.
+One tip per line. No numbering, no extra text. Do not invent numbers.
 
 Facts:
-${issues.map((i) => "- " + i).join("\n")}`,
+${facts.map((fact) => "- " + fact).join("\n")}`,
             { temperature: 0.4 }
         );
 
         const tips = answer
             .split("\n")
-            .map((t) => t.replace(/^[-*\d.\s]+/, "").trim())
+            .map((tip) => tip.replace(/^[-*\d.\s]+/, "").trim())
             .filter(Boolean)
             .slice(0, 3);
 
         if (tips.length > 0) {
-            return { source: "llm", month: summary.month, tips, facts: issues };
+            return {
+                hasData: true,
+                source: "llm",
+                month: summary.month,
+                tips,
+                facts
+            };
         }
     } catch (error) {
         console.error("Recommendation LLM error:", error.message);
     }
 
-    // LLM failed or returned nothing -> return the plain facts
-    return { source: "rules", month: summary.month, tips: issues, facts: issues };
+    return {
+        hasData: true,
+        source: "rules",
+        month: summary.month,
+        tips: facts,
+        facts
+    };
 };
+
+export const generateDailyForUser = async (user, { force = false } = {}) => {
+    const date = todayDhaka();
+    const key = { phone: user.phone, type: "daily_recommendation", date };
+
+    const existing = await Notification.findOne(key);
+    if (existing && !force) return existing;
+
+    const recommendation = await getRecommendations(user);
+    if (!recommendation.hasData) return existing || null;
+
+    return Notification.findOneAndUpdate(
+        key,
+        {
+            ...key,
+            title: "Aajker financial tip",
+            message: recommendation.tips[0],
+            tips: recommendation.tips,
+            source: recommendation.source,
+            read: false
+        },
+        { upsert: true, new: true }
+    );
+};
+
+export const runDailyForAllUsers = async () => {
+    const users = await User.find({ isActive: true });
+    let created = 0;
+
+    for (const user of users) {
+        try {
+            if (await generateDailyForUser(user)) created++;
+        } catch (error) {
+            console.error(
+                `Daily recommendation failed for ${user.phone}:`,
+                error.message
+            );
+        }
+    }
+
+    console.log(
+        `Daily recommendations ready for ${created}/${users.length} users`
+    );
+};
+
+export const listNotifications = (phone, { unreadOnly = false } = {}) =>
+    Notification.find({
+        phone,
+        ...(unreadOnly ? { read: false } : {})
+    })
+        .sort({ date: -1, createdAt: -1 })
+        .limit(30);
+
+export const markNotificationRead = (phone, id) =>
+    Notification.findOneAndUpdate(
+        { _id: id, phone },
+        { read: true },
+        { new: true }
+    );
