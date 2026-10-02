@@ -43,7 +43,8 @@ const executeTransfer = async (
         pin,
         transactionType,
         category,
-        reference
+        reference,
+        transactionDate
     },
     session
 ) => {
@@ -204,7 +205,8 @@ const executeTransfer = async (
                     failReason: null,
                     transactionType,
                     category,
-                    reference
+                    reference,
+                    transactionDate
                 }
             ],
             {
@@ -237,7 +239,8 @@ const recordFailure = async (
             failReason,
             transactionType: data.transactionType,
             category: data.category || "other",
-            reference: data.reference
+            reference: data.reference,
+            transactionDate: data.transactionDate
         });
     } catch (error) {
         console.error(
@@ -267,7 +270,8 @@ export const createTransaction = async (
         pin,
         transactionType,
         category,
-        reference
+        reference,
+        transactionDate
     } = req.body;
 
     const numAmount = Number(amount);
@@ -334,7 +338,8 @@ export const createTransaction = async (
         pin,
         transactionType,
         category,
-        reference
+        reference,
+        transactionDate
     };
 
     const session =

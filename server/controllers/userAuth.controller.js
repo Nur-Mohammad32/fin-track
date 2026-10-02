@@ -8,6 +8,7 @@ export const registerUser = async (req, res, next) => {
             name,
             phone,
             pin,
+            currentBalance,
             accountType,
             businessType
         } = req.body;
@@ -51,6 +52,7 @@ export const registerUser = async (req, res, next) => {
             name,
             phone,
             pin: hashedPin,
+            currentBalance: currentBalance ?? 0,
             accountType,
             businessType: accountType === "merchant" ? businessType : []
         });
@@ -62,6 +64,7 @@ export const registerUser = async (req, res, next) => {
                 id: user._id,
                 name: user.name,
                 phone: user.phone,
+                currentBalance: user.currentBalance,
                 accountType: user.accountType,
                 businessType: user.businessType
             }

@@ -77,10 +77,14 @@ const transactionSchema = new mongoose.Schema(
         reference: {
             type: String,
             trim: true
+        },
+        transactionDate: {
+            type: Date,
+            required: true
         }
     },
     {
-        timestamps: true
+        timestamps: false
     }
 );
 

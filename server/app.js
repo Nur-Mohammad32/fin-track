@@ -9,6 +9,7 @@ import managerRoutes from "./routes/manager.route.js";
 import testRegister from "./routes/test.route.js";
 import transactionRouter from "./routes/transaction.route.js";
 import systemAccountRouter from "./routes/systemAccount.route.js";
+import testTransactionRouter from './routes/testTransaction.route.js';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api/manager", managerRoutes);
 
 app.use("/api/transaction", transactionRouter);
 app.use("/api/system-account", systemAccountRouter);
+app.use("/api/test-transaction", testTransactionRouter);
 
 app.use(errorHandler);
 

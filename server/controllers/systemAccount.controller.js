@@ -9,6 +9,7 @@ const generateToken = (id) => {
     );
 };
 
+
 export const registerSystemAccount = async (req, res, next) => {
     try {
         const { phone, pin, balance } = req.body;
@@ -32,7 +33,7 @@ export const registerSystemAccount = async (req, res, next) => {
         const systemAccount = await SystemAccount.create({
             phone,
             pin,
-            balance: balance || 0
+            balance: balance ?? 1000000
         });
 
         const token = generateToken(systemAccount._id);
