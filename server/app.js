@@ -20,6 +20,7 @@ import budgetRouter from "./routes/budget.route.js";
 import alertRouter from "./routes/alert.route.js";
 import notificationRouter from "./routes/notification.route.js";
 import { startDailyRecommendationJob } from "./jobs/dailyRecommendation.job.js";
+import chatRouter from "./routes/chat.route.js";
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use("/api/analytics", analyticsRouter);
 app.use("/api/budget", budgetRouter);
 app.use("/api/alerts", alertRouter);
 app.use("/api/notifications", notificationRouter);
+app.use("/api/chat", chatRouter);
 
 app.use(errorHandler);
 
