@@ -5,9 +5,12 @@
 
 import Transaction from "../models/transaction.model.js";
 import Alert from "../models/alert.model.js";
-import { askLLM } from "./llm.service.js";
+import { askLLM, parseJsonLoose } from "./llm.service.js";
 
 const DAY = 24 * 60 * 60 * 1000;
+
+// Risk probability above this becomes a home screen red alert
+export const RED_ALERT_THRESHOLD = 70;
 
 // Hour of day (0-23) in Bangladesh time
 const dhakaHour = (date) =>
@@ -35,8 +38,9 @@ For every anomaly type, estimate how confident you are that it represents
 a genuinely suspicious event for this user. Return ONLY valid JSON:
 {"results":[{"type":"large_amount","confidence":0}]}
 Confidence must be an integer from 0 to 100. Do not invent facts.
-An 80 or higher confidence means the app may show a prominent red alert.
-Below 80 means it belongs in the general notification panel.
+A confidence higher than ${RED_ALERT_THRESHOLD} means the app may show a
+prominent red alert. ${RED_ALERT_THRESHOLD} or below means it belongs in
+the general notification panel.
 
 Transaction:
 ${JSON.stringify({
@@ -50,8 +54,8 @@ Detected evidence:
 ${hits.map((hit) => `- ${hit.type}: ${hit.message}`).join("\n")}`,
             { temperature: 0 }
         );
-        const parsed = JSON.parse(answer);
-        if (Array.isArray(parsed.results)) {
+        const parsed = parseJsonLoose(answer);
+        if (parsed && Array.isArray(parsed.results)) {
             for (const item of parsed.results) {
                 const confidence = Number(item.confidence);
                 if (
@@ -145,7 +149,12 @@ export const checkTransaction = async (txn) => {
                 phone: txn.from,
                 transactionId: txn.transactionId,
                 confidence,
-                displayType: confidence >= 80 ? "red_alert" : "notification"
+                // Home screen red alert: risk probability over the
+                // threshold. Anything lower stays in the notification panel.
+                displayType:
+                    confidence > RED_ALERT_THRESHOLD
+                        ? "red_alert"
+                        : "notification"
             };
         })
     );
@@ -169,3 +178,48 @@ export const markRead = (phone, id) =>
         { read: true },
         { new: true }
     );
+
+// Record the user's answer to "Was this you?".
+// "confirmed" marks the alert read so it disappears.
+// "denied" keeps it unread: the follow-up options and the
+// home screen red banner stay visible.
+export const respondToAlert = (phone, id, confirmed) =>
+    Alert.findOneAndUpdate(
+        { _id: id, phone },
+        confirmed
+            ? {
+                    userResponse: "confirmed",
+                    respondedAt: new Date(),
+                    read: true
+                }
+            : { userResponse: "denied", respondedAt: new Date() },
+        { new: true }
+    );
+
+// Record the follow-up choice after the user reports "not me".
+// "ignore" keeps the alert unread (the red banner remains).
+// "pin_changed" records the step (the PIN change itself happens
+// through the existing change-pin endpoint).
+export const recordFollowUp = async (phone, id, action) => {
+    if (!["ignore", "pin_changed"].includes(action)) {
+        const error = new Error("action must be ignore or pin_changed");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const alert = await Alert.findOne({ _id: id, phone });
+    if (!alert) {
+        const error = new Error("Alert not found");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    alert.followUp = action === "ignore" ? "ignored" : "action_taken";
+
+    if (action === "pin_changed") {
+        alert.actionsTaken.addToSet("pin_changed");
+    }
+
+    await alert.save();
+    return alert;
+};

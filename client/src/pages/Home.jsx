@@ -1,7 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Send, Banknote, Smartphone, Receipt, CreditCard, ArrowRightLeft,
-  Landmark, Heart, PiggyBank, ShieldCheck, Sparkles, Wallet,
+  Landmark, Heart, PiggyBank, ShieldCheck, Sparkles, Wallet, ShieldAlert,
 } from "lucide-react"
 import { apiFetch } from "../lib/api"
 import SendMoney from "./SendMoney"
@@ -12,6 +12,7 @@ import Donation from "./Donation"
 import FinTrack from "./FinTrack"
 import BudgetGoals from "./BudgetGoals"
 import BottomNav from "../components/BottomNav"
+import AlertFollowUp from "../components/AlertFollowUp"
 import Profile from "./Profile"
 import Transactions from "./Transactions"
 import Notifications from "./Notifications"
@@ -47,6 +48,67 @@ export default function Home({ user, onLogout }) {
   const [balance, setBalance] = useState(null)
   const [balError, setBalError] = useState("")
   const [section, setSection] = useState("Home")
+  const [redAlerts, setRedAlerts] = useState([])
+  const [alertNotice, setAlertNotice] = useState("")
+  const [ticketClearedIds, setTicketClearedIds] = useState(new Set())
+
+  // Emergency (red) alerts shown on the home screen
+  useEffect(() => {
+    if (section !== "Home") return
+
+    let cancelled = false
+    const loadRedAlerts = async () => {
+      try {
+        const data = await apiFetch("/alerts?unread=true&type=red_alert")
+        // Alerts the user has already taken steps on leave the banner
+        if (!cancelled)
+          setRedAlerts(
+            (data.data ?? []).filter(
+              (a) =>
+                (!a.actionsTaken || a.actionsTaken.length === 0) &&
+                !ticketClearedIds.has(a._id)
+            )
+          )
+      } catch {
+        // Alerts are optional
+      }
+    }
+    loadRedAlerts()
+    return () => {
+      cancelled = true
+    }
+  }, [section])
+
+  // Auto-hide the confirmation notice
+  useEffect(() => {
+    if (!alertNotice) return
+    const t = setTimeout(() => setAlertNotice(""), 5000)
+    return () => clearTimeout(t)
+  }, [alertNotice])
+
+  const handleAlertUpdated = (updated, context) => {
+    if (updated.userResponse === "confirmed") {
+      setRedAlerts((list) => list.filter((a) => a._id !== updated._id))
+      setAlertNotice("Thanks for confirming. We've recorded this activity as yours.")
+      return
+    }
+    if (context === "support_ticket") {
+      // Frontend-only ticket creation: clear the red banner for this session
+      setRedAlerts((list) => list.filter((a) => a._id !== updated._id))
+      setTicketClearedIds((s) => new Set([...s, updated._id]))
+      setAlertNotice("Support ticket created. The alert is cleared from the home screen.")
+      return
+    }
+    if (context === "pin_changed") {
+      // Steps taken -> clear the red banner (the alert stays in the panel)
+      setRedAlerts((list) => list.filter((a) => a._id !== updated._id))
+      setAlertNotice("PIN changed successfully. The alert is cleared from the home screen.")
+      return
+    }
+    setRedAlerts((list) => list.map((a) => (a._id === updated._id ? updated : a)))
+    if (context === "respond") setAlertNotice("Reported as not you. Choose what to do below.")
+    else if (context === "ignore") setAlertNotice("Alert ignored. It will remain on this page.")
+  }
 
   const checkBalance = async () => {
     if (showBalance) {
@@ -165,15 +227,19 @@ export default function Home({ user, onLogout }) {
       {/* Header */}
       <div className=" bg-blue-800 px-10 pb-10 pt-15 text-white shadow-md">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <button
+            onClick={() => setSection("Profile")}
+            aria-label="Open profile"
+            className="flex items-center gap-3 rounded-full transition active:scale-95"
+          >
             <div className="flex size-10 items-center justify-center rounded-full bg-white/20">
               <span className="text-lg font-bold">{user?.name?.[0]?.toUpperCase() ?? "U"}</span>
             </div>
-            <div>
+            <div className="text-left">
               <p className="text-xs text-blue-100">Welcome back</p>
               <p className="text-sm font-bold leading-tight">{user?.name ?? "User"}</p>
             </div>
-          </div>
+          </button>
           <button
             onClick={checkBalance}
             className="rounded-full bg-white/15 px-4 py-2 text-xs font-semibold"
@@ -185,6 +251,39 @@ export default function Home({ user, onLogout }) {
       {balError && <p className="px-5 pt-3 text-xs text-red-500">{balError}</p>}
 
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 py-5">
+        {/* Emergency security alert */}
+        {redAlerts.length > 0 && (
+          <div className="mb-4 rounded-2xl bg-red-600 p-4 text-white shadow-md">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="size-5" />
+              <h3 className="text-sm font-bold">Security Alert</h3>
+              {redAlerts.length > 1 && (
+                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">
+                  +{redAlerts.length - 1} more
+                </span>
+              )}
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-red-100">
+              {redAlerts[0].message}
+            </p>
+            <p className="mt-1 text-[10px] font-semibold text-red-200">
+              {redAlerts[0].confidence}% confidence
+            </p>
+            <AlertFollowUp
+              alert={redAlerts[0]}
+              variant="banner"
+              onUpdated={handleAlertUpdated}
+              onError={(msg) => setAlertNotice(msg)}
+            />
+          </div>
+        )}
+
+        {alertNotice && (
+          <p className="mb-4 rounded-xl bg-blue-100 px-4 py-2.5 text-xs font-semibold text-blue-700">
+            {alertNotice}
+          </p>
+        )}
+
         {/* Main services */}
         <div className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="grid grid-cols-3 gap-4">
@@ -255,7 +354,7 @@ export default function Home({ user, onLogout }) {
         </div>
       )}
 
-      <BottomNav active={section} onChange={setSection} />
+      <BottomNav active={section} onChange={setSection} onLogout={onLogout} />
     </div>
   )
 }

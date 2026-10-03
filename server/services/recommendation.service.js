@@ -44,6 +44,7 @@ const spendingFacts = (summary) => {
             const share = Math.round(
                 (category.current / summary.spent) * 100
             );
+
             if (share >= 30) {
                 facts.push(
                     `${category.category} is ${share}% of all spending (${category.current} of ${summary.spent} BDT).`
@@ -96,7 +97,10 @@ const goalFacts = (progress) => {
 
 export const getRecommendations = async (user) => {
     let summary = await getSummary(user.phone, 0);
-    if (summary.spent === 0) summary = await getSummary(user.phone, -1);
+
+    if (summary.spent === 0) {
+        summary = await getSummary(user.phone, -1);
+    }
 
     if (summary.spent === 0) {
         return {
@@ -161,37 +165,49 @@ ${facts.map((fact) => "- " + fact).join("\n")}`,
     };
 };
 
-export const generateDailyForUser = async (user, { force = false } = {}) => {
+export const generateDailyForUser = async (user) => {
     const date = todayDhaka();
-    const key = { phone: user.phone, type: "daily_recommendation", date };
 
-    const existing = await Notification.findOne(key);
-    if (existing && !force) return existing;
+    const existing = await Notification.findOne({
+        phone: user.phone,
+        type: "daily_recommendation",
+        date
+    });
+
+    if (existing) {
+        return existing;
+    }
 
     const recommendation = await getRecommendations(user);
-    if (!recommendation.hasData) return existing || null;
 
-    return Notification.findOneAndUpdate(
-        key,
-        {
-            ...key,
-            title: "Aajker financial tip",
-            message: recommendation.tips[0],
-            tips: recommendation.tips,
-            source: recommendation.source,
-            read: false
-        },
-        { upsert: true, new: true }
-    );
+    if (!recommendation.hasData) {
+        return null;
+    }
+
+    return Notification.create({
+        phone: user.phone,
+        type: "daily_recommendation",
+        date,
+        title: "Aajker financial tip",
+        message: recommendation.tips[0],
+        tips: recommendation.tips,
+        source: recommendation.source,
+        read: false
+    });
 };
 
 export const runDailyForAllUsers = async () => {
     const users = await User.find({ isActive: true });
+
     let created = 0;
 
     for (const user of users) {
         try {
-            if (await generateDailyForUser(user)) created++;
+            const notification = await generateDailyForUser(user);
+
+            if (notification) {
+                created++;
+            }
         } catch (error) {
             console.error(
                 `Daily recommendation failed for ${user.phone}:`,

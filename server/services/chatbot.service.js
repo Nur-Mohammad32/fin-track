@@ -2,7 +2,7 @@ import Transaction from "../models/transaction.model.js";
 import User from "../models/user.model.js";
 import { getSummary } from "./analytics.service.js";
 import { getProgress } from "./budget.service.js";
-import { askLLM } from "./llm.service.js";
+import { askLLM, parseJsonLoose } from "./llm.service.js";
 
 const MAX_QUESTION_LENGTH = 2000;
 const MAX_TRANSACTIONS = 100;
@@ -18,13 +18,10 @@ const toSafeTransaction = (transaction, phone) => ({
 });
 
 const parseStructuredAnswer = (answer) => {
-    try {
-        const parsed = JSON.parse(answer);
-        if (parsed && typeof parsed.answer === "string") {
-            return { answer: parsed.answer };
-        }
-    } catch {
-        // The model may return plain text despite the JSON instruction.
+    // Tolerates plain text and markdown-fenced JSON.
+    const parsed = parseJsonLoose(answer);
+    if (parsed && typeof parsed.answer === "string") {
+        return { answer: parsed.answer };
     }
 
     return { answer };

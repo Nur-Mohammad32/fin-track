@@ -17,6 +17,7 @@ import testTransactionRouter from './routes/testTransaction.route.js';
 import analyticsRouter from "./routes/analytics.route.js";
 import budgetRouter from "./routes/budget.route.js";
 import alertRouter from "./routes/alert.route.js";
+import chatRoutes from "./routes/chat.route.js";
 
 const app = express();
 
@@ -31,17 +32,18 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth/users", userAuthRoutes);
-app.use("/api/auth/test-register", testRegister);
+// app.use("/api/auth/test-register", testRegister);
 app.use("/api/auth/system-users", systemUserAuthRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/manager", managerRoutes);
 
 app.use("/api/transaction", transactionRouter);
 app.use("/api/system-account", systemAccountRouter);
-app.use("/api/test-transaction", testTransactionRouter);
+// app.use("/api/test-transaction", testTransactionRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/budget", budgetRouter);
 app.use("/api/alerts", alertRouter);
+app.use("/api/chat", chatRoutes);
 
 app.use(errorHandler);
 

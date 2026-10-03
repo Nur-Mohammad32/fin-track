@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react"
-import { TrendingUp, TrendingDown, Wallet, Receipt, Calendar, Percent, Target, Loader2 } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { TrendingUp, TrendingDown, Wallet, Receipt, Calendar, Percent, Target, Loader2, Send, X, ArrowLeft, BotMessageSquare } from "lucide-react"
 import { apiFetch } from "../lib/api"
 
 export default function FinTrack({ user, onClose, onPlanMonth }) {
@@ -9,6 +9,19 @@ export default function FinTrack({ user, onClose, onPlanMonth }) {
   const [summary, setSummary] = useState(null)
   const [recommendations, setRecommendations] = useState(null)
   const [recLoading, setRecLoading] = useState(true)
+
+  // AI chatbot
+  const [chatMessages, setChatMessages] = useState([
+    {
+      role: "bot",
+      text: "Hi! I'm your finance assistant. Ask me about your spending, like \"How much did I spend on food this month?\" or \"Which category is my biggest expense?\"",
+    },
+  ])
+  const [chatInput, setChatInput] = useState("")
+  const [chatLoading, setChatLoading] = useState(false)
+  const [chatError, setChatError] = useState("")
+  const [chatOpen, setChatOpen] = useState(false)
+  const chatScrollRef = useRef(null)
 
   // Load balance + summary immediately (fast)
   useEffect(() => {
@@ -62,6 +75,42 @@ export default function FinTrack({ user, onClose, onPlanMonth }) {
     }
   }, [])
 
+  const sendChat = async (e) => {
+    e.preventDefault()
+    const text = chatInput.trim()
+    if (!text || chatLoading) return
+
+    setChatInput("")
+    setChatError("")
+    setChatMessages((msgs) => [...msgs, { role: "user", text }])
+    setChatLoading(true)
+
+    try {
+      const data = await apiFetch("/chat", {
+        method: "POST",
+        body: JSON.stringify({ question: text }),
+      })
+      const answer =
+        data?.data?.answer ??
+        "Sorry, I couldn't get an answer. Please try again."
+      setChatMessages((msgs) => [...msgs, { role: "bot", text: answer }])
+    } catch (err) {
+      setChatMessages((msgs) => [
+        ...msgs,
+        { role: "bot", text: "Sorry, something went wrong. Please try again." },
+      ])
+      setChatError(err.message)
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
+  // Keep the chat pinned to the latest message
+  useEffect(() => {
+    const el = chatScrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [chatMessages, chatLoading])
+
   const thisMonth = summary?.spent ?? 0
   const lastMonth = summary?.prevSpent ?? 0
   const change =
@@ -90,9 +139,16 @@ export default function FinTrack({ user, onClose, onPlanMonth }) {
 
   return (
     <div className="animate-slide-in flex h-full flex-col bg-blue-50">
-      {/* Header - icon and name only */}
+      {/* Header - back arrow, icon and name */}
       <div className="px-5 pb-5 pt-15">
         <div className="flex items-center gap-3">
+          <button
+            onClick={onClose}
+            aria-label="Back"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 transition active:scale-90"
+          >
+            <ArrowLeft className="size-5" />
+          </button>
           <div className="flex size-10 items-center justify-center rounded-full bg-blue-100 text-blue-600">
             <span className="text-lg font-bold">{user?.name?.[0]?.toUpperCase() ?? "U"}</span>
           </div>
@@ -100,7 +156,7 @@ export default function FinTrack({ user, onClose, onPlanMonth }) {
         </div>
       </div>
 
-      <div className="no-scrollbar flex-1 overflow-y-auto p-5">
+      <div className="no-scrollbar flex-1 overflow-y-auto p-5 pb-24">
         {loading && (
           <div className="flex h-full items-center justify-center">
             <p className="text-sm text-gray-400">Loading your finances...</p>
@@ -255,17 +311,98 @@ export default function FinTrack({ user, onClose, onPlanMonth }) {
                 </div>
               </div>
             </button>
-
-            {/* Back button */}
-            <button
-              className="mt-5 h-12 w-full rounded-2xl bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700"
-              onClick={onClose}
-            >
-              Back
-            </button>
           </>
         )}
       </div>
+
+      {/* Full-screen AI chat */}
+      {chatOpen && (
+        <div className="absolute inset-0 z-40 flex flex-col bg-blue-50">
+          <div className="flex items-center gap-3 bg-blue-600 px-5 pb-4 pt-15 text-white shadow-md">
+            <button
+              onClick={() => setChatOpen(false)}
+              aria-label="Back"
+              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 active:scale-90"
+            >
+              <ArrowLeft className="size-5" />
+            </button>
+            <h2 className="text-base font-bold">Ask Fin-Track</h2>
+          </div>
+
+          <div
+            ref={chatScrollRef}
+            className="no-scrollbar flex-1 space-y-2.5 overflow-y-auto px-5 py-4"
+          >
+            {chatMessages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[85%] px-3.5 py-2.5 text-xs leading-relaxed ${
+                    msg.role === "user"
+                      ? "rounded-2xl rounded-br-md bg-blue-600 text-white"
+                      : "rounded-2xl rounded-bl-md bg-white text-gray-700 shadow-sm ring-1 ring-blue-100"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-2 rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 shadow-sm ring-1 ring-blue-100">
+                  <span className="text-xs text-gray-500">Fin-Track is writing</span>
+                  <span className="flex items-center gap-0.5">
+                    <span className="typing-dot size-1 rounded-full bg-blue-600" />
+                    <span className="typing-dot size-1 rounded-full bg-blue-600" />
+                    <span className="typing-dot size-1 rounded-full bg-blue-600" />
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {chatError && (
+            <p className="px-5 pb-1 text-[10px] text-red-500">{chatError}</p>
+          )}
+
+          <form onSubmit={sendChat} className="flex items-center gap-2 border-t border-gray-100 bg-white p-4 pr-24">
+            <input
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Ask about your finances..."
+              className="h-11 min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3.5 text-sm outline-none focus:border-blue-500"
+            />
+            <button
+              type="submit"
+              disabled={chatLoading || !chatInput.trim()}
+              aria-label="Send message"
+              className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition hover:bg-blue-700 disabled:opacity-50"
+            >
+              <Send className="size-4" />
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Floating AI chat bubble - prominent, on top, click again to close */}
+      {!chatOpen && (
+        <span className="pointer-events-none absolute bottom-10 right-24 z-50 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-bold text-blue-600 shadow-md ring-1 ring-blue-100">
+          Ask Fin-Track
+        </span>
+      )}
+      <button
+        onClick={() => setChatOpen((v) => !v)}
+        aria-label={chatOpen ? "Close chat" : "Open AI chat"}
+        className="absolute bottom-5 right-5 z-50 flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white shadow-xl shadow-blue-600/40 ring-4 ring-white/70 transition-all duration-300 active:scale-90"
+      >
+        {chatOpen ? (
+          <X className="size-7" />
+        ) : (
+          <BotMessageSquare className="size-7" />
+        )}
+      </button>
     </div>
   )
 }
