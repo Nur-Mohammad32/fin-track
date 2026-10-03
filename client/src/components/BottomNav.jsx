@@ -22,12 +22,12 @@ export default function BottomNav({ active = "Home", onChange, onLogout }) {
               onClick={handleClick}
               aria-label={label}
               className={`flex flex-1 flex-col items-center gap-1 py-1 text-[10px] font-medium transition ${
-                isActive ? "text-blue-600" : "text-gray-400"
+                isActive ? "text-purple-600" : "text-gray-400"
               }`}
             >
               <span
                 className={`flex size-9 items-center justify-center rounded-full transition ${
-                  isActive ? "bg-blue-50" : ""
+                  isActive ? "bg-purple-50" : ""
                 }`}
               >
                 <Icon className="size-5" />

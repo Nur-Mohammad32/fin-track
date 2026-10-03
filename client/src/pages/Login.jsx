@@ -37,7 +37,7 @@ export default function Login({ onLogin }) {
         <div>
           <label className="text-sm font-semibold text-gray-900">Phone number</label>
           <input
-            className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-blue-500"
+            className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-purple-500"
             placeholder="01XXXXXXXXX"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -49,7 +49,7 @@ export default function Login({ onLogin }) {
             <input
               type={showPin ? "text" : "password"}
               inputMode="numeric"
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 pr-14 text-sm outline-none focus:border-blue-500"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 pr-14 text-sm outline-none focus:border-purple-500"
               placeholder="4 digits"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
@@ -62,7 +62,7 @@ export default function Login({ onLogin }) {
         {error && <p className="text-sm text-red-500">{error}</p>}
         <button
           disabled={loading}
-          className="mt-2 h-11 rounded-2xl bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+          className="mt-2 h-11 rounded-2xl bg-purple-600 text-sm font-bold text-white transition hover:bg-purple-700 disabled:opacity-60"
         >
           {loading ? "Logging in..." : "Log in"}
         </button>

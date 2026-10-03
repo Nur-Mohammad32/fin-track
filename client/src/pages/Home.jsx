@@ -221,28 +221,27 @@ export default function Home({ user, onLogout }) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-blue-50">
+    <div className="flex h-full flex-col bg-purple-50">
       {section === "Home" && (
         <>
       {/* Header */}
-      <div className=" bg-blue-800 px-10 pb-10 pt-15 text-white shadow-md">
-        <div className="flex items-center justify-between">
+      <div className=" bg-purple-800 px-10 pb-10 pt-15 text-white shadow-md">
+        <div className="flex items-center justify-between gap-8">
           <button
             onClick={() => setSection("Profile")}
             aria-label="Open profile"
-            className="flex items-center gap-3 rounded-full transition active:scale-95"
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-full transition active:scale-95"
           >
-            <div className="flex size-10 items-center justify-center rounded-full bg-white/20">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/20">
               <span className="text-lg font-bold">{user?.name?.[0]?.toUpperCase() ?? "U"}</span>
             </div>
-            <div className="text-left">
-              <p className="text-xs text-blue-100">Welcome back</p>
-              <p className="text-sm font-bold leading-tight">{user?.name ?? "User"}</p>
+            <div className="flex-1 text-left">
+              <p className="break-words text-sm font-bold leading-snug">{user?.name ?? "User"}</p>
             </div>
           </button>
           <button
             onClick={checkBalance}
-            className="rounded-full bg-white/15 px-4 py-2 text-xs font-semibold"
+            className="shrink-0 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold"
           >
             {showBalance ? `৳ ${balance ?? 0}` : "Check Balance"}
           </button>
@@ -279,7 +278,7 @@ export default function Home({ user, onLogout }) {
         )}
 
         {alertNotice && (
-          <p className="mb-4 rounded-xl bg-blue-100 px-4 py-2.5 text-xs font-semibold text-blue-700">
+          <p className="mb-4 rounded-xl bg-purple-100 px-4 py-2.5 text-xs font-semibold text-purple-700">
             {alertNotice}
           </p>
         )}
@@ -293,7 +292,7 @@ export default function Home({ user, onLogout }) {
                 onClick={label === "Send Money" ? openSendMoney : label === "Pay Bill" ? openPayBillHandler : label === "Mobile Recharge" ? openRechargeHandler : label === "Make Payment" ? openMakePaymentHandler : label === "Donation" ? openDonationHandler : undefined}
                 className="group flex flex-col items-center gap-2 transition-transform duration-150 active:scale-90"
               >
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 transition-all duration-150 group-hover:bg-blue-100 group-active:scale-90">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 transition-all duration-150 group-hover:bg-purple-100 group-active:scale-90">
                   <Icon className="size-5 transition-transform duration-150 group-active:scale-110" />
                 </span>
                 <span className="text-center text-[11px] font-medium leading-tight text-gray-600">{label}</span>
@@ -303,10 +302,10 @@ export default function Home({ user, onLogout }) {
         </div>
 
         {/* Hero banner */}
-        <div className="mt-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-400 p-5 text-white shadow-md">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-100">Limited Offer</p>
+        <div className="mt-4 rounded-2xl bg-gradient-to-r from-purple-600 to-purple-400 p-5 text-white shadow-md">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-purple-100">Limited Offer</p>
           <h2 className="mt-1 text-lg font-bold leading-snug">Get 10% cashback on your first Send Money</h2>
-          <button className="mt-3 rounded-full bg-white px-4 py-1.5 text-xs font-bold text-blue-600">
+          <button className="mt-3 rounded-full bg-white px-4 py-1.5 text-xs font-bold text-purple-600">
             Claim Now
           </button>
         </div>
@@ -317,7 +316,7 @@ export default function Home({ user, onLogout }) {
           <div className="grid grid-cols-3 gap-4">
             {MORE_SERVICES.map(({ icon: Icon, label }) => (
               <button key={label} className="flex flex-col items-center gap-2">
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-purple-50 text-purple-600">
                   <Icon className="size-5" />
                 </span>
                 <span className="text-center text-[11px] font-medium leading-tight text-gray-600">{label}</span>
@@ -327,16 +326,16 @@ export default function Home({ user, onLogout }) {
         </div>
 
         {/* Fin-Track */}
-        <div className="mt-5 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+        <div className="mt-5 rounded-2xl border border-purple-100 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-blue-600" />
+            <Sparkles className="size-4 text-purple-600" />
             <h3 className="text-sm font-bold text-gray-900">Fin-Track</h3>
-            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-600">AI</span>
+            <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-600">AI</span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
             Your AI-powered personal finance guide. Track spending, get saving tips, and stay on budget.
           </p>
-          <button className="mt-3 w-full rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white" onClick={openFinTrackHandler}>
+          <button className="mt-3 w-full rounded-xl bg-purple-600 py-2.5 text-xs font-bold text-white" onClick={openFinTrackHandler}>
             Open Fin-Track
           </button>
         </div>

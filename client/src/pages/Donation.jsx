@@ -58,13 +58,13 @@ export default function Donation({ user, balance, onClose }) {
   }
 
   const inputCls =
-    "mt-1.5 h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-blue-500"
+    "mt-1.5 h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-purple-500"
   const btnCls =
-    "mt-4 h-12 w-full rounded-2xl bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+    "mt-4 h-12 w-full rounded-2xl bg-purple-600 text-sm font-bold text-white transition hover:bg-purple-700 disabled:opacity-60"
 
   return (
-    <div className="animate-slide-in flex h-full flex-col bg-blue-50">
-      <div className="flex items-center gap-3 bg-blue-600 px-5 pb-5 pt-10 text-white">
+    <div className="animate-slide-in flex h-full flex-col bg-purple-50">
+      <div className="flex items-center gap-3 bg-purple-600 px-5 pb-5 pt-10 text-white">
         {step < 5 && (
           <button onClick={step === 1 ? onClose : back}>
             <ArrowLeft className="size-5" />
@@ -96,7 +96,7 @@ export default function Donation({ user, balance, onClose }) {
         {step === 2 && (
           <>
             <h2 className="text-lg font-bold text-gray-900">Amount</h2>
-            <p className="text-xs text-gray-400">Available balance: <span className="font-bold text-blue-600">৳ {balance ?? 0}</span></p>
+            <p className="text-xs text-gray-400">Available balance: <span className="font-bold text-purple-600">৳ {balance ?? 0}</span></p>
             <div className="mt-5">
               <label className="text-sm font-semibold text-gray-900">Enter amount</label>
               <input type="number" min="0" className={inputCls} placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} />
@@ -152,7 +152,7 @@ export default function Donation({ user, balance, onClose }) {
         {/* Step 5: Processing */}
         {step === 5 && (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <Loader2 className="size-14 animate-spin text-blue-600" />
+            <Loader2 className="size-14 animate-spin text-purple-600" />
             <h2 className="mt-5 text-lg font-bold text-gray-900">Processing your donation...</h2>
             <p className="mt-1 text-xs text-gray-400">Please wait, do not close the app</p>
           </div>
@@ -163,7 +163,7 @@ export default function Donation({ user, balance, onClose }) {
           <div className="flex flex-col items-center pt-6 text-center">
             <CheckCircle2 className="size-16 text-green-500" />
             <h2 className="mt-4 text-xl font-bold text-gray-900">Donation Successful</h2>
-            <p className="mt-1 text-2xl font-bold text-blue-600">৳ {amount}</p>
+            <p className="mt-1 text-2xl font-bold text-purple-600">৳ {amount}</p>
             <div className="mt-6 w-full rounded-2xl bg-white p-4 text-sm shadow-sm">
               <Row label="Recipient" value={recipient} />
               <Row label="Reference" value={reference || "—"} />

@@ -1,9 +1,9 @@
 export default function PhoneFrame({ children }) {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="relative h-[calc(100vh-2rem)] aspect-[410/844] max-w-full bg-white rounded-[40px] shadow-2xl overflow-hidden border-8 border-gray-900">
+    <div className="min-h-screen bg-gray-400 flex items-center justify-center p-4">
+      <div className="relative h-[calc(100vh-2rem)] aspect-[410/844] max-w-full bg-[#f4f1fa] rounded-[40px] shadow-2xl overflow-hidden border-8 border-black">
         {/* Punch-hole camera */}
-        <div className="absolute left-1/2 top-3 z-20 size-3 -translate-x-1/2 rounded-full bg-gray-900" />
+        <div className="absolute left-1/2 top-3 z-20 size-3 -translate-x-1/2 rounded-full bg-black" />
         {/* Status bar */}
         <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between px-7 pt-2.5 text-xs font-semibold text-gray-900">
           <span>9:41</span>

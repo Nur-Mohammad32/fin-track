@@ -34,10 +34,10 @@ export default function AlertFollowUp({ alert, variant = "card", onUpdated, onEr
         chips.push({ text: "Ignored — alert remains active", cls: banner ? "bg-amber-400/20 text-amber-100" : "bg-amber-100 text-amber-700" })
     }
     if (tookPin) {
-        chips.push({ text: "PIN changed", cls: banner ? "bg-blue-400/20 text-blue-100" : "bg-blue-100 text-blue-700" })
+        chips.push({ text: "PIN changed", cls: banner ? "bg-purple-400/20 text-purple-100" : "bg-purple-100 text-purple-700" })
     }
     if (ticketCreated || storedTicketId) {
-        chips.push({ text: "Support ticket created", cls: banner ? "bg-blue-400/20 text-blue-100" : "bg-blue-100 text-blue-700" })
+        chips.push({ text: "Support ticket created", cls: banner ? "bg-purple-400/20 text-purple-100" : "bg-purple-100 text-purple-700" })
     }
 
     const handleCreateTicket = () => {
@@ -127,7 +127,7 @@ export default function AlertFollowUp({ alert, variant = "card", onUpdated, onEr
 
             {denied && !alert.followUp && !stepsOpen && !hasTicket && (
                 <div className="flex gap-2">
-                    <button onClick={() => setStepsOpen(true)} disabled={busy} className={`flex-1 rounded-xl py-2 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${banner ? "bg-white text-red-600" : "bg-blue-600 text-white"}`}>
+                    <button onClick={() => setStepsOpen(true)} disabled={busy} className={`flex-1 rounded-xl py-2 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${banner ? "bg-white text-red-600" : "bg-purple-600 text-white"}`}>
                         Take necessary steps
                     </button>
                     <button onClick={() => callFollowUp("ignore", "ignore")} disabled={busy} className={`flex-1 rounded-xl py-2 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${banner ? "bg-red-700 text-white ring-1 ring-white/30" : "bg-white text-gray-700 shadow-sm ring-1 ring-gray-200"}`}>
@@ -170,7 +170,7 @@ export default function AlertFollowUp({ alert, variant = "card", onUpdated, onEr
                     </form>
                 ) : (
                     <div className="flex flex-wrap gap-2">
-                        <button onClick={() => setShowPinForm(true)} disabled={tookPin || busy} className={`flex-1 rounded-xl py-2 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${banner ? "bg-white text-red-600" : "bg-blue-600 text-white"}`}>
+                        <button onClick={() => setShowPinForm(true)} disabled={tookPin || busy} className={`flex-1 rounded-xl py-2 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${banner ? "bg-white text-red-600" : "bg-purple-600 text-white"}`}>
                             {tookPin ? "PIN changed" : "Change PIN"}
                         </button>
                         <button onClick={handleCreateTicket} disabled={hasTicket || busy} className={`flex-1 rounded-xl py-2 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${banner ? "bg-red-700 text-white ring-1 ring-white/30" : "bg-white text-gray-700 shadow-sm ring-1 ring-gray-200"}`}>
@@ -193,12 +193,12 @@ export default function AlertFollowUp({ alert, variant = "card", onUpdated, onEr
                 <div>
                     <button
                         onClick={() => setTrackOpen((v) => !v)}
-                        className="w-full rounded-xl bg-blue-600 py-2 text-xs font-bold text-white transition active:scale-95"
+                        className="w-full rounded-xl bg-purple-600 py-2 text-xs font-bold text-white transition active:scale-95"
                     >
                         {trackOpen ? "Hide ticket status" : "Track ticket"}
                     </button>
                     {trackOpen && (
-                        <div className={`mt-2 rounded-xl p-3 text-xs leading-relaxed ${banner ? "bg-red-700/60 text-red-50" : "bg-gray-50 text-gray-600 ring-1 ring-gray-100"}`}>
+                        <div className={`mt-2 rounded-xl p-3 text-xs leading-relaxed ${banner ? "bg-[#c06a6a]/60 text-red-50" : "bg-gray-50 text-gray-600 ring-1 ring-gray-100"}`}>
                             <p className="font-bold">Unauthorized transaction report</p>
                             <p className="mt-1">
                                 Status: <span className="font-bold text-amber-500">Open</span> — our team will contact you.

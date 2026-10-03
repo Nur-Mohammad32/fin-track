@@ -8,7 +8,7 @@
 :root {
   --text: #6b6375;
   --text-h: #08060d;
-  --bg: #fff;
+  --bg: #f4f1fa;
   --border: oklch(0.922 0 0);
   --code-bg: #f4f3ec;
   --accent: oklch(0.97 0 0);
@@ -36,7 +36,7 @@
     font-size: 16px;
   }
 
-  --background: oklch(1 0 0);
+  --background: #f4f1fa;
 
   --foreground: oklch(0.145 0 0);
 
@@ -303,3 +303,109 @@ code {
     @apply bg-background text-foreground;}
   html {
     @apply font-sans;}}
+
+/* Global dark mode: follows reference (dark purple-black + violet) */
+.dark {
+  color-scheme: dark;
+}
+.dark body,
+.dark #root {
+  background: #171226;
+}
+.dark .bg-purple-50 {
+  background-color: #171226;
+}
+.dark .bg-white {
+  background-color: #231b3d;
+}
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  background-color: #171226;
+}
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-gray-300,
+.dark .text-gray-200 {
+  color: #fff;
+}
+.dark .text-purple-100,
+.dark .text-purple-200,
+.dark .text-purple-300 {
+  color: #fff;
+}
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #fff;
+}
+.dark .border-gray-200,
+.dark .border-gray-100 {
+  border-color: rgb(88 28 135 / 0.6);
+}
+.dark .ring-gray-200,
+.dark .ring-gray-100 {
+  --tw-ring-color: rgb(88 28 135 / 0.6);
+}
+.dark .bg-purple-100 {
+  background-color: rgb(88 28 135 / 0.5);
+}
+.dark .bg-purple-600 {
+  background-color: #7c3aed;
+}
+.dark .bg-purple-800 {
+  background-color: #251b45;
+}
+.dark .from-purple-600 {
+  --tw-gradient-from: #7c3aed;
+  --tw-gradient-to: #7c3aed;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+.dark .to-purple-400 {
+  --tw-gradient-to: #8b5cf6;
+}
+.dark .text-purple-500 {
+  color: #8b5cf6;
+}
+.dark .text-purple-600 {
+  color: #8b5cf6;
+}
+.dark .bg-purple-500 {
+  background-color: #7c3aed;
+}
+.dark input {
+  color-scheme: dark;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgb(216 180 254 / 0.5);
+}
+
+/* Eye-soothing alert reds (softer, less saturated) */
+.bg-red-600 {
+  background-color: #d97b7b;
+}
+.bg-red-700 {
+  background-color: #c06a6a;
+}
+.bg-red-50 {
+  background-color: #fbeeee;
+}
+.bg-red-100 {
+  background-color: #f6dede;
+}
+.text-red-500 {
+  color: #d67f7f;
+}
+.text-red-600 {
+  color: #c96f6f;
+}
+.text-red-700 {
+  color: #b45f5f;
+}
+.ring-red-200 {
+  --tw-ring-color: #f0cfcf;
+}
+.border-red-200 {
+  border-color: #f0cfcf;
+}

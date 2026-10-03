@@ -27,9 +27,9 @@ export default function Transactions() {
   }, [])
 
   return (
-    <div className="flex h-full flex-col bg-blue-50">
-      <div className="rounded-b-2xl bg-blue-600 px-5 pb-4 pt-6 text-white shadow-md">
-        <h1 className="text-base font-bold">Transactions</h1>
+    <div className="flex h-full flex-col bg-purple-50">
+      <div className=" bg-purple-800 px-10 pb-10 pt-15 text-white shadow-md">
+        <h1 className="font-bold" style={{ fontSize: "22px", margin: 0, letterSpacing: "normal", color: "inherit" }}>Transactions</h1>
       </div>
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 py-5">
         <div className="rounded-2xl bg-white p-2 shadow-sm">

@@ -68,7 +68,7 @@ export default function BudgetGoals({ user, onClose }) {
   const total = budgets.reduce((s, b) => s + b.limit, 0)
 
   return (
-    <div className="animate-slide-in flex h-full flex-col bg-blue-50">
+    <div className="animate-slide-in flex h-full flex-col bg-purple-50">
       {/* Header */}
       <div className="px-5 pb-5 pt-15">
         <div className="flex items-center gap-3">
@@ -95,7 +95,7 @@ export default function BudgetGoals({ user, onClose }) {
             Your goal
           </label>
           <textarea
-            className="mt-1.5 h-28 w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500"
+            className="mt-1.5 h-28 w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-purple-500"
             placeholder="e.g. I want to save 5000 taka in 2 months"
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
@@ -104,7 +104,7 @@ export default function BudgetGoals({ user, onClose }) {
 
         {/* Generate Plan button */}
         <button
-          className="mt-4 h-12 w-full rounded-2xl bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+          className="mt-4 h-12 w-full rounded-2xl bg-purple-600 text-sm font-bold text-white transition hover:bg-purple-700 disabled:opacity-60"
           onClick={generate}
           disabled={loading}
         >
@@ -173,11 +173,11 @@ export default function BudgetGoals({ user, onClose }) {
                 </tbody>
                 {budgets.length > 0 && (
                   <tfoot>
-                    <tr className="bg-blue-50">
+                    <tr className="bg-purple-50">
                       <td className="px-4 py-2.5 font-bold text-gray-900">
                         Total
                       </td>
-                      <td className="px-4 py-2.5 text-right font-bold text-blue-600">
+                      <td className="px-4 py-2.5 text-right font-bold text-purple-600">
                         {formatAmount(total)}
                       </td>
                     </tr>

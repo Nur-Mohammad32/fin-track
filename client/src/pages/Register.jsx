@@ -56,7 +56,7 @@ export default function Register({ onRegistered }) {
         <div>
           <label className="text-sm font-semibold text-gray-900">Full name</label>
           <input
-            className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-blue-500"
+            className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-purple-500"
             placeholder="Rahim Uddin"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -65,7 +65,7 @@ export default function Register({ onRegistered }) {
         <div>
           <label className="text-sm font-semibold text-gray-900">Phone number</label>
           <input
-            className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-blue-500"
+            className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-purple-500"
             placeholder="01XXXXXXXXX"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -77,7 +77,7 @@ export default function Register({ onRegistered }) {
             <input
               type={showPin ? "text" : "password"}
               inputMode="numeric"
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 pr-14 text-sm outline-none focus:border-blue-500"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 pr-14 text-sm outline-none focus:border-purple-500"
               placeholder="4 digits"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
@@ -92,7 +92,7 @@ export default function Register({ onRegistered }) {
           <input
             type={showPin ? "text" : "password"}
             inputMode="numeric"
-            className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-blue-500"
+            className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none focus:border-purple-500"
             placeholder="Re-enter PIN"
             value={confirmPin}
             onChange={(e) => setConfirmPin(e.target.value)}
@@ -105,7 +105,7 @@ export default function Register({ onRegistered }) {
               type="button"
               onClick={() => setAccountType("general")}
               className={`rounded-xl border p-4 text-left transition ${
-                accountType === "general" ? "border-blue-600 bg-blue-50" : "border-gray-200 bg-white"
+                accountType === "general" ? "border-purple-600 bg-purple-50" : "border-gray-200 bg-white"
               }`}
             >
               <p className="font-bold text-gray-900">Personal</p>
@@ -115,7 +115,7 @@ export default function Register({ onRegistered }) {
               type="button"
               onClick={() => setAccountType("merchant")}
               className={`rounded-xl border p-4 text-left transition ${
-                accountType === "merchant" ? "border-blue-600 bg-blue-50" : "border-gray-200 bg-white"
+                accountType === "merchant" ? "border-purple-600 bg-purple-50" : "border-gray-200 bg-white"
               }`}
             >
               <p className="font-bold text-gray-900">Merchant</p>
@@ -137,7 +137,7 @@ export default function Register({ onRegistered }) {
                       setBusinessType(selected ? businessType.filter((x) => x !== b) : [...businessType, b])
                     }
                     className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                      selected ? "border-blue-600 bg-blue-600 text-white" : "border-gray-200 bg-white text-gray-600"
+                      selected ? "border-purple-600 bg-purple-600 text-white" : "border-gray-200 bg-white text-gray-600"
                     }`}
                   >
                     {formatLabel(b)}
@@ -150,7 +150,7 @@ export default function Register({ onRegistered }) {
         {error && <p className="text-sm text-red-500">{error}</p>}
         <button
           disabled={loading}
-          className="mt-2 h-11 rounded-2xl bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+          className="mt-2 h-11 rounded-2xl bg-purple-600 text-sm font-bold text-white transition hover:bg-purple-700 disabled:opacity-60"
         >
           {loading ? "Creating..." : "Create account"}
         </button>

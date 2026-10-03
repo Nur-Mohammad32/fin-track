@@ -19,7 +19,7 @@ const TYPE_LABELS = {
 const SEVERITY_META = {
   high: { Icon: ShieldAlert, iconClass: "bg-red-100 text-red-600" },
   medium: { Icon: AlertTriangle, iconClass: "bg-amber-100 text-amber-600" },
-  low: { Icon: Bell, iconClass: "bg-blue-100 text-blue-600" },
+  low: { Icon: Bell, iconClass: "bg-purple-100 text-purple-600" },
 }
 
 const timeAgo = (value) => {
@@ -62,9 +62,9 @@ export default function Notifications() {
   }, [unreadOnly, nonce])
 
   return (
-    <div className="flex h-full flex-col bg-blue-50">
-      <div className="rounded-b-2xl bg-blue-600 px-5 pb-4 pt-6 text-white shadow-md">
-        <h1 className="text-base font-bold">Notifications</h1>
+    <div className="flex h-full flex-col bg-purple-50">
+      <div className=" bg-purple-800 px-10 pb-10 pt-15 text-white shadow-md">
+        <h1 className="font-bold" style={{ fontSize: "22px", margin: 0, letterSpacing: "normal", color: "inherit" }}>Notifications</h1>
       </div>
 
       {/* Filter */}
@@ -78,7 +78,7 @@ export default function Notifications() {
               onClick={() => setUnreadOnly(isUnread)}
               className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${
                 active
-                  ? "bg-blue-600 text-white"
+                  ? "bg-purple-600 text-white"
                   : "bg-white text-gray-500 shadow-sm"
               }`}
             >
@@ -91,7 +91,7 @@ export default function Notifications() {
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 py-4">
         {loading && (
           <div className="flex h-full items-center justify-center">
-            <Loader2 className="size-5 animate-spin text-blue-600" />
+            <Loader2 className="size-5 animate-spin text-purple-600" />
           </div>
         )}
 
@@ -100,7 +100,7 @@ export default function Notifications() {
             <p className="text-sm text-red-500">{error}</p>
             <button
               onClick={() => setNonce((n) => n + 1)}
-              className="mt-4 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white"
+              className="mt-4 rounded-xl bg-purple-600 px-6 py-2.5 text-sm font-bold text-white"
             >
               Retry
             </button>
@@ -109,7 +109,7 @@ export default function Notifications() {
 
         {!loading && !error && alerts.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <span className="flex size-14 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+            <span className="flex size-14 items-center justify-center rounded-full bg-purple-100 text-purple-600">
               <ShieldCheck className="size-7" />
             </span>
             <p className="mt-3 text-sm font-bold text-gray-900">
@@ -157,13 +157,13 @@ export default function Notifications() {
                             {timeAgo(alert.createdAt)}
                           </span>
                           {!alert.read && (
-                            <span className="size-2 rounded-full bg-blue-600" />
+                            <span className="size-2 rounded-full bg-purple-600" />
                           )}
                         </div>
                       </div>
                       <p
                         className={`mt-1 text-xs leading-relaxed ${
-                          isRed ? "text-red-700/80" : "text-gray-500"
+                          isRed ? "text-[#b45f5f]/80" : "text-gray-500"
                         }`}
                       >
                         {alert.message}
