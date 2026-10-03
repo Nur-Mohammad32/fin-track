@@ -12,6 +12,8 @@ const FIXED = [
     "financial"
 ];
 
+const roundBDT = (amount) => Math.round(amount / 100) * 100;
+
 const todayDhaka = () =>
     new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(
         new Date()
@@ -31,7 +33,7 @@ const spendingFacts = (summary) => {
         )
         .forEach((category) =>
             facts.push(
-                `${category.category} spending is up ${category.changePercent}% vs the month before (${category.previous} -> ${category.current} BDT).`
+                `${category.category} spending is up ${category.changePercent}% vs the month before (${roundBDT(category.previous)} -> ${roundBDT(category.current)} BDT).`
             )
         );
 
@@ -47,14 +49,14 @@ const spendingFacts = (summary) => {
 
             if (share >= 30) {
                 facts.push(
-                    `${category.category} is ${share}% of all spending (${category.current} of ${summary.spent} BDT).`
+                    `${category.category} is ${share}% of all spending (${roundBDT(category.current)} of ${roundBDT(summary.spent)} BDT).`
                 );
             }
         });
 
     if (summary.income > 0 && summary.spent > summary.income) {
         facts.push(
-            `Spending (${summary.spent} BDT) is higher than income (${summary.income} BDT).`
+            `Spending (${roundBDT(summary.spent)} BDT) is higher than income (${roundBDT(summary.income)} BDT).`
         );
     }
 
@@ -65,22 +67,22 @@ const goalFacts = (progress) => {
     if (!progress) return [];
 
     const facts = [
-        `Saving goal: ${progress.goalAmount} BDT by ${new Date(progress.endDate)
+        `Saving goal: ${roundBDT(progress.goalAmount)} BDT by ${new Date(progress.endDate)
             .toISOString()
-            .slice(0, 10)} (${progress.monthlyTarget} BDT per month).`
+            .slice(0, 10)} (approximately ${roundBDT(progress.monthlyTarget)} BDT per month).`
     ];
 
     facts.push(
         progress.onTrack
             ? "Saving is on track so far."
-            : `Balance changed by ${progress.savedSoFar} BDT since the plan started (target so far: ${progress.expectedSoFar} BDT).`
+            : `Balance changed by approximately ${roundBDT(progress.savedSoFar)} BDT since the plan started (target so far: approximately ${roundBDT(progress.expectedSoFar)} BDT).`
     );
 
     progress.categories
         .filter((category) => category.status === "over")
         .forEach((category) =>
             facts.push(
-                `Budget exceeded for ${category.category}: spent ${category.spent} of ${category.limit} BDT.`
+                `Budget exceeded for ${category.category}: spent approximately ${roundBDT(category.spent)} of approximately ${roundBDT(category.limit)} BDT.`
             )
         );
 
@@ -88,9 +90,37 @@ const goalFacts = (progress) => {
         .filter((category) => category.status === "warning")
         .forEach((category) =>
             facts.push(
-                `Budget almost used for ${category.category}: spent ${category.spent} of ${category.limit} BDT.`
+                `Budget almost used for ${category.category}: spent approximately ${roundBDT(category.spent)} of approximately ${roundBDT(category.limit)} BDT.`
             )
         );
+
+    return facts;
+};
+
+const pacingFacts = (summary) => {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(
+        now.getMonth() + 1
+    ).padStart(2, "0")}`;
+
+    if (summary.month !== currentMonth || summary.spent <= 0) return [];
+
+    const daysElapsed = now.getDate();
+    const daysInMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0
+    ).getDate();
+    const projectedSpend = Math.round(
+        (summary.spent / daysElapsed) * daysInMonth
+    );
+    const facts = [];
+
+    if (summary.prevSpent > 0 && projectedSpend > summary.prevSpent * 1.1) {
+        facts.push(
+            `Only ${daysElapsed} of ${daysInMonth} days have passed, but spending is already approximately ${roundBDT(summary.spent)} BDT. At this pace, this month's spending may reach about ${roundBDT(projectedSpend)} BDT, compared with approximately ${roundBDT(summary.prevSpent)} BDT last month.`
+        );
+    }
 
     return facts;
 };
@@ -113,7 +143,11 @@ export const getRecommendations = async (user) => {
     }
 
     const progress = await getProgress(user);
-    const facts = [...spendingFacts(summary), ...goalFacts(progress)];
+    const facts = [
+        ...spendingFacts(summary),
+        ...pacingFacts(summary),
+        ...goalFacts(progress)
+    ];
 
     if (facts.length === 0) {
         return {
@@ -128,9 +162,15 @@ export const getRecommendations = async (user) => {
     try {
         const answer = await askLLM(
             `You are a friendly personal finance coach in a mobile wallet app in Bangladesh.
-Using ONLY the facts below, write at maximum 3 short, practical tips (max 20 words each) that help the user reduce spending and reach their saving goal (if they have one).
-Write in simple English.
-One tip per line. No numbering, no extra text. Do not invent numbers.
+Use ONLY the facts below. Do not assume missing information or invent numbers.
+Write up to 3 short, practical financial tips, with each tip no longer than 20 words.
+Write in simple English, one tip per line, with no numbering or extra text.
+Always use approximate round BDT figures to the nearest 100 (for example, 8,900 BDT, not 8,876 BDT).
+Treat any fact about projected spending, overspending, or an exceeded budget as a warning.
+When a warning exists, make the first tip clearly tell the user to slow down spending and protect their saving goal.
+Mention the projected amount or comparison only when it appears in the facts.
+Never say spending is balanced, healthy, or on track when a warning fact exists.
+Only say spending is balanced when the facts contain no warning.
 
 Facts:
 ${facts.map((fact) => "- " + fact).join("\n")}`,
