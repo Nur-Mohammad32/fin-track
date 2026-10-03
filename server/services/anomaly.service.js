@@ -12,6 +12,11 @@ const DAY = 24 * 60 * 60 * 1000;
 // Risk probability above this becomes a home screen red alert
 export const RED_ALERT_THRESHOLD = 70;
 
+// Confidence assigned once the user acts on an alert (PIN changed,
+// support ticket created, or ignored). 65 <= 70, so handled alerts
+// stay in Notifications but never return to the Home Page.
+export const HANDLED_CONFIDENCE = 65;
+
 // Hour of day (0-23) in Bangladesh time
 const dhakaHour = (date) =>
     Number(
@@ -162,15 +167,24 @@ export const checkTransaction = async (txn) => {
 
 export const getAlerts = (
     phone,
-    { unreadOnly = false, displayType = null } = {}
-) =>
-    Alert.find({
+    { unreadOnly = false, displayType = null, minConfidence = null } = {}
+) => {
+    const query = {
         phone,
         ...(unreadOnly && { read: false }),
         ...(displayType && { displayType })
-    })
+    };
+
+    // Home Page rule: only alerts with confidence above the threshold.
+    // Handled alerts sit at HANDLED_CONFIDENCE (65) and are excluded.
+    if (minConfidence !== null && minConfidence !== undefined) {
+        query.confidence = { $gt: Number(minConfidence) };
+    }
+
+    return Alert.find(query)
         .sort({ createdAt: -1 })
         .limit(50);
+};
 
 export const markRead = (phone, id) =>
     Alert.findOneAndUpdate(
@@ -197,9 +211,10 @@ export const respondToAlert = (phone, id, confirmed) =>
     );
 
 // Record the follow-up choice after the user reports "not me".
-// "ignore" keeps the alert unread (the red banner remains).
-// "pin_changed" records the step (the PIN change itself happens
-// through the existing change-pin endpoint).
+// Any action (ignore or PIN change) marks the alert handled:
+// confidence drops to HANDLED_CONFIDENCE (65) so it stays in the
+// notification panel but leaves the home screen banner.
+// (The PIN change itself happens through the existing change-pin endpoint.)
 export const recordFollowUp = async (phone, id, action) => {
     if (!["ignore", "pin_changed"].includes(action)) {
         const error = new Error("action must be ignore or pin_changed");
@@ -219,6 +234,28 @@ export const recordFollowUp = async (phone, id, action) => {
     if (action === "pin_changed") {
         alert.actionsTaken.addToSet("pin_changed");
     }
+
+    alert.action = true;
+    alert.confidence = HANDLED_CONFIDENCE;
+
+    await alert.save();
+    return alert;
+};
+
+// Create a support ticket for an alert. Marks the alert handled
+// (action = true, confidence = 65) so it stays in Notifications
+// but never returns to the Home Page, even after reload.
+// The alert stays unread so it remains visible in the panel.
+export const createSupportTicket = async (phone, id) => {
+    const alert = await Alert.findOne({ _id: id, phone });
+    if (!alert) {
+        const error = new Error("Alert not found");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    alert.action = true;
+    alert.confidence = HANDLED_CONFIDENCE;
 
     await alert.save();
     return alert;

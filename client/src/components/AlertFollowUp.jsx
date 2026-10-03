@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { apiFetch } from "../lib/api"
+import { getTicketId, createLocalTicket } from "../lib/tickets"
 
 // Shared response flow for a security alert:
 //   Phase 1: "Yes, it was me" / "No, it was not me"
@@ -19,6 +20,8 @@ export default function AlertFollowUp({ alert, variant = "card", onUpdated, onEr
     const banner = variant === "banner"
     const denied = alert.userResponse === "denied"
     const tookPin = alert.actionsTaken?.includes("pin_changed")
+    const storedTicketId = getTicketId(alert._id)
+    const hasTicket = ticketCreated || Boolean(storedTicketId)
 
     const chips = []
     if (alert.userResponse === "confirmed") {
@@ -33,15 +36,20 @@ export default function AlertFollowUp({ alert, variant = "card", onUpdated, onEr
     if (tookPin) {
         chips.push({ text: "PIN changed", cls: banner ? "bg-blue-400/20 text-blue-100" : "bg-blue-100 text-blue-700" })
     }
-    if (ticketCreated) {
+    if (ticketCreated || storedTicketId) {
         chips.push({ text: "Support ticket created", cls: banner ? "bg-blue-400/20 text-blue-100" : "bg-blue-100 text-blue-700" })
     }
 
     const handleCreateTicket = () => {
-        // Frontend only for now: no backend call. Marks the local state
-        // and tells the parent to clear the red banner.
+        // Optimistic + persisted: save locally first (instant UI, survives
+        // reload), then sync to the backend so the alert is marked handled
+        // (confidence 65) and stays off the home banner on any device.
+        const ticketId = createLocalTicket(alert._id)
         setTicketCreated(true)
-        onUpdated?.(alert, "support_ticket")
+        onUpdated?.({ ...alert, supportTicketId: ticketId }, "support_ticket")
+        apiFetch(`/alerts/${alert._id}/ticket`, { method: "POST" })
+            .then((data) => onUpdated?.(data.data, "support_ticket"))
+            .catch((err) => console.warn("Ticket backend sync failed:", err.message))
     }
 
     const callFollowUp = async (action, context) => {
@@ -117,7 +125,7 @@ export default function AlertFollowUp({ alert, variant = "card", onUpdated, onEr
                 </div>
             )}
 
-            {denied && !alert.followUp && !stepsOpen && !ticketCreated && (
+            {denied && !alert.followUp && !stepsOpen && !hasTicket && (
                 <div className="flex gap-2">
                     <button onClick={() => setStepsOpen(true)} disabled={busy} className={`flex-1 rounded-xl py-2 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${banner ? "bg-white text-red-600" : "bg-blue-600 text-white"}`}>
                         Take necessary steps
@@ -165,8 +173,8 @@ export default function AlertFollowUp({ alert, variant = "card", onUpdated, onEr
                         <button onClick={() => setShowPinForm(true)} disabled={tookPin || busy} className={`flex-1 rounded-xl py-2 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${banner ? "bg-white text-red-600" : "bg-blue-600 text-white"}`}>
                             {tookPin ? "PIN changed" : "Change PIN"}
                         </button>
-                        <button onClick={handleCreateTicket} disabled={ticketCreated || busy} className={`flex-1 rounded-xl py-2 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${banner ? "bg-red-700 text-white ring-1 ring-white/30" : "bg-white text-gray-700 shadow-sm ring-1 ring-gray-200"}`}>
-                            {ticketCreated ? "Ticket created" : "Create support ticket"}
+                        <button onClick={handleCreateTicket} disabled={hasTicket || busy} className={`flex-1 rounded-xl py-2 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${banner ? "bg-red-700 text-white ring-1 ring-white/30" : "bg-white text-gray-700 shadow-sm ring-1 ring-gray-200"}`}>
+                            {hasTicket ? "Ticket created" : "Create support ticket"}
                         </button>
                         <button onClick={() => setStepsOpen(false)} className={`rounded-xl px-4 py-2 text-xs font-bold ${banner ? "bg-white/10 text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}>
                             Done
@@ -175,13 +183,13 @@ export default function AlertFollowUp({ alert, variant = "card", onUpdated, onEr
                 )
             )}
 
-            {denied && alert.followUp && !stepsOpen && !ticketCreated && (
+            {denied && alert.followUp && !stepsOpen && !hasTicket && (
                 <button onClick={() => setStepsOpen(true)} className={`w-full rounded-xl py-2 text-xs font-bold transition active:scale-95 ${banner ? "bg-red-700 text-white ring-1 ring-white/30" : "bg-white text-gray-700 shadow-sm ring-1 ring-gray-200"}`}>
                     Take necessary steps
                 </button>
             )}
 
-            {denied && !stepsOpen && ticketCreated && (
+            {denied && !stepsOpen && hasTicket && (
                 <div>
                     <button
                         onClick={() => setTrackOpen((v) => !v)}
@@ -191,8 +199,7 @@ export default function AlertFollowUp({ alert, variant = "card", onUpdated, onEr
                     </button>
                     {trackOpen && (
                         <div className={`mt-2 rounded-xl p-3 text-xs leading-relaxed ${banner ? "bg-red-700/60 text-red-50" : "bg-gray-50 text-gray-600 ring-1 ring-gray-100"}`}>
-                            <p className="font-bold">Ticket #TKT-{alert._id?.slice(-6).toUpperCase()}</p>
-                            <p className="mt-1">Subject: Unauthorized transaction report</p>
+                            <p className="font-bold">Unauthorized transaction report</p>
                             <p className="mt-1">
                                 Status: <span className="font-bold text-amber-500">Open</span> — our team will contact you.
                             </p>

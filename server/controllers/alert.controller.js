@@ -4,20 +4,32 @@ import {
     markRead,
     respondToAlert,
     recordFollowUp,
+    createSupportTicket,
     RED_ALERT_THRESHOLD
 } from "../services/anomaly.service.js";
 
 // GET /api/alerts             -> all alerts
 // GET /api/alerts?unread=true -> only unread
+// GET /api/alerts?min_confidence=70 -> only alerts with confidence above 70 (Home Page)
 export const list = async (req, res) => {
     const displayType = ["red_alert", "notification"].includes(
         req.query.type
     )
         ? req.query.type
         : null;
+    const minConfidence =
+        req.query.min_confidence !== undefined
+            ? Number(req.query.min_confidence)
+            : null;
+    if (minConfidence !== null && !Number.isFinite(minConfidence)) {
+        return res
+            .status(400)
+            .json({ success: false, message: "min_confidence must be a number" });
+    }
     const alerts = await getAlerts(req.user.phone, {
         unreadOnly: req.query.unread === "true",
-        displayType
+        displayType,
+        minConfidence
     });
     res.json({
         success: true,
@@ -67,4 +79,10 @@ export const followUp = async (req, res) => {
         req.body?.action
     );
     res.json({ success: true, data: alert });
+};
+
+// POST /api/alerts/:id/ticket   create a support ticket (marks alert handled)
+export const createTicket = async (req, res) => {
+    const alert = await createSupportTicket(req.user.phone, req.params.id);
+    res.status(201).json({ success: true, data: alert });
 };

@@ -168,15 +168,6 @@ export default function Notifications() {
                       >
                         {alert.message}
                       </p>
-                      <span
-                        className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          isRed
-                            ? "bg-red-100 text-red-700"
-                            : "bg-blue-50 text-blue-600"
-                        }`}
-                      >
-                        {alert.confidence}% confidence
-                      </span>
 
                       {alert.userResponse === "confirmed" && (
                         <span className="mt-2 inline-block rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">

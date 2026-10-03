@@ -4,6 +4,7 @@ import {
   Landmark, Heart, PiggyBank, ShieldCheck, Sparkles, Wallet, ShieldAlert,
 } from "lucide-react"
 import { apiFetch } from "../lib/api"
+import { hasTicket } from "../lib/tickets"
 import SendMoney from "./SendMoney"
 import PayBill from "./PayBill"
 import MobileRecharge from "./MobileRecharge"
@@ -50,25 +51,20 @@ export default function Home({ user, onLogout }) {
   const [section, setSection] = useState("Home")
   const [redAlerts, setRedAlerts] = useState([])
   const [alertNotice, setAlertNotice] = useState("")
-  const [ticketClearedIds, setTicketClearedIds] = useState(new Set())
 
-  // Emergency (red) alerts shown on the home screen
+  // Emergency alerts on the home screen: only confidence above 70.
+  // Acting on an alert drops it to 65, so it stays in Notifications
+  // but never returns here — even after reload.
   useEffect(() => {
     if (section !== "Home") return
 
     let cancelled = false
     const loadRedAlerts = async () => {
       try {
-        const data = await apiFetch("/alerts?unread=true&type=red_alert")
-        // Alerts the user has already taken steps on leave the banner
+        const data = await apiFetch("/alerts?unread=true&min_confidence=70")
+        // Extra safety for tickets created while the backend sync failed
         if (!cancelled)
-          setRedAlerts(
-            (data.data ?? []).filter(
-              (a) =>
-                (!a.actionsTaken || a.actionsTaken.length === 0) &&
-                !ticketClearedIds.has(a._id)
-            )
-          )
+          setRedAlerts((data.data ?? []).filter((a) => !hasTicket(a._id)))
       } catch {
         // Alerts are optional
       }
@@ -93,9 +89,8 @@ export default function Home({ user, onLogout }) {
       return
     }
     if (context === "support_ticket") {
-      // Frontend-only ticket creation: clear the red banner for this session
+      // Ticket saved (local + backend sync): banner stays cleared on reload
       setRedAlerts((list) => list.filter((a) => a._id !== updated._id))
-      setTicketClearedIds((s) => new Set([...s, updated._id]))
       setAlertNotice("Support ticket created. The alert is cleared from the home screen.")
       return
     }
@@ -105,9 +100,14 @@ export default function Home({ user, onLogout }) {
       setAlertNotice("PIN changed successfully. The alert is cleared from the home screen.")
       return
     }
+    if (context === "ignore") {
+      // Ignored -> confidence drops to 65: leaves home, stays in panel
+      setRedAlerts((list) => list.filter((a) => a._id !== updated._id))
+      setAlertNotice("Alert ignored. It won't show on the home screen again.")
+      return
+    }
     setRedAlerts((list) => list.map((a) => (a._id === updated._id ? updated : a)))
     if (context === "respond") setAlertNotice("Reported as not you. Choose what to do below.")
-    else if (context === "ignore") setAlertNotice("Alert ignored. It will remain on this page.")
   }
 
   const checkBalance = async () => {
