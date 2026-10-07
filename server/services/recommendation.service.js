@@ -205,17 +205,19 @@ ${facts.map((fact) => "- " + fact).join("\n")}`,
     };
 };
 
-export const generateDailyForUser = async (user) => {
+export const generateDailyForUser = async (user, { force = false } = {}) => {
     const date = todayDhaka();
 
-    const existing = await Notification.findOne({
-        phone: user.phone,
-        type: "daily_recommendation",
-        date
-    });
+    if (!force) {
+        const existing = await Notification.findOne({
+            phone: user.phone,
+            type: "daily_recommendation",
+            date
+        });
 
-    if (existing) {
-        return existing;
+        if (existing) {
+            return existing;
+        }
     }
 
     const recommendation = await getRecommendations(user);
@@ -224,7 +226,7 @@ export const generateDailyForUser = async (user) => {
         return null;
     }
 
-    return Notification.create({
+    const doc = {
         phone: user.phone,
         type: "daily_recommendation",
         date,
@@ -233,7 +235,81 @@ export const generateDailyForUser = async (user) => {
         tips: recommendation.tips,
         source: recommendation.source,
         read: false
+    };
+
+    try {
+        if (force) {
+            return await Notification.findOneAndUpdate(
+                {
+                    phone: user.phone,
+                    type: "daily_recommendation",
+                    date
+                },
+                doc,
+                { new: true, upsert: true, setDefaultsOnInsert: true }
+            );
+        }
+
+        return await Notification.create(doc);
+    } catch (error) {
+        // Race: two parallel refreshes generated at once. Re-read the winner.
+        if (error?.code === 11000) {
+            return Notification.findOne({
+                phone: user.phone,
+                type: "daily_recommendation",
+                date
+            });
+        }
+        throw error;
+    }
+};
+
+export const getTodaysRecommendation = async (user) => {
+    const date = todayDhaka();
+
+    const cached = await Notification.findOne({
+        phone: user.phone,
+        type: "daily_recommendation",
+        date
     });
+
+    if (cached) {
+        return {
+            hasData: true,
+            source: cached.source,
+            month: cached.date,
+            tips: cached.tips,
+            facts: [],
+            cached: true,
+            notificationId: cached._id,
+            date: cached.date
+        };
+    }
+
+    const created = await generateDailyForUser(user);
+
+    if (created) {
+        return {
+            hasData: true,
+            source: created.source,
+            month: created.date,
+            tips: created.tips,
+            facts: [],
+            cached: false,
+            notificationId: created._id,
+            date: created.date
+        };
+    }
+
+    return {
+        hasData: false,
+        source: "rules",
+        month: date.slice(0, 7),
+        tips: ["Not enough spending data yet."],
+        facts: [],
+        cached: false,
+        date
+    };
 };
 
 export const runDailyForAllUsers = async () => {
